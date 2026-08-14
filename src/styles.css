@@ -218,7 +218,7 @@ textarea {
   width: min(100% - 28px, 1400px);
   min-height: var(--header-h);
   padding: 8px 10px 8px 18px;
-  background: rgb(16 16 16 / 62%);
+  background: #000;
   border: 1px solid var(--line-strong);
   border-radius: 16px;
   backdrop-filter: blur(18px) saturate(1.15);
@@ -235,7 +235,7 @@ textarea {
 .site-header.is-condensed {
   top: 8px;
   min-height: 60px;
-  background: rgb(14 14 14 / 86%);
+  background: #000;
   border-color: rgb(255 255 255 / 18%);
 }
 
@@ -1267,7 +1267,7 @@ textarea {
 .site-footer {
   padding-block: 44px;
   border-top: 1px solid var(--line);
-  background: var(--bg-deep);
+  background: #000;
 }
 
 .footer-inner {
