@@ -1,0 +1,809 @@
+import { useEffect, useRef, useState } from 'react'
+import { useSiteMotion } from './useSiteMotion.js'
+import { ArrowRight, Check, Menu, X } from './components/Icons.jsx'
+import Brand from './components/Brand.jsx'
+import Brief from './components/Brief.jsx'
+
+const NAV = [
+  { href: '#about', label: 'О нас' },
+  { href: '#price', label: 'Прайс' },
+  { href: '#cases', label: 'Кейсы' },
+  { href: '#contacts', label: 'Контакты' },
+]
+
+const CASES = [
+  {
+    slug: 'case-bedroom',
+    title: 'Тихая геометрия',
+    room: 'Спальня',
+    wide: true,
+    width: 1800,
+    height: 900,
+  },
+  { slug: 'case-kitchen', title: 'Светлый камень', room: 'Кухня', width: 1800, height: 1080 },
+  { slug: 'case-bathroom', title: 'Чистый ритм', room: 'Ванная', width: 1800, height: 1201 },
+  {
+    slug: 'case-dark',
+    title: 'Графичный контраст',
+    room: 'Кухня-гостиная',
+    wide: true,
+    width: 1800,
+    height: 1264,
+  },
+]
+
+const SERVICES = [
+  {
+    n: '01',
+    title: 'Планирование и дизайн',
+    text: 'Планировка, инженерные решения и сценарии света согласуются до начала работ.',
+  },
+  {
+    n: '02',
+    title: 'Черновые и инженерные работы',
+    text: 'Демонтаж, стены, стяжка, электрика и сантехника по проекту.',
+  },
+  {
+    n: '03',
+    title: 'Чистовая отделка',
+    text: 'Штукатурка, покраска, плитка, полы, двери и потолки.',
+  },
+  {
+    n: '04',
+    title: 'Комплектация объекта',
+    text: 'Подбор и поставка материалов, сантехники и света под утверждённый уровень.',
+  },
+]
+
+// Kept from the approved version: these three are specifically about renovation
+// work, so they stay. Only the abstract statement headline was removed.
+const ASSURANCES = [
+  {
+    title: 'Сначала логика',
+    text: 'Планировка, инженерия и сценарии света согласуются до чистовой отделки.',
+  },
+  {
+    title: 'Смета до старта',
+    text: 'Состав работ и уровень материалов обсуждаются до выхода на объект.',
+  },
+  {
+    title: 'Контроль по этапам',
+    text: 'Каждый следующий слой начинается после проверки предыдущего.',
+  },
+]
+
+const PROCESS = [
+  { n: '01', title: 'Знакомство и замеры', text: 'Осматриваем квартиру, фиксируем размеры, инженерные узлы и исходное состояние.' },
+  { n: '02', title: 'Задача и планировка', text: 'Согласуем сценарии помещений, размещение мебели, света и коммуникаций.' },
+  { n: '03', title: 'Состав работ и смета', text: 'Определяем объёмы, уровень материалов и последовательность работ до старта.' },
+  { n: '04', title: 'Подготовка и демонтаж', text: 'Освобождаем объект и демонтируем только то, что предусмотрено согласованным планом.' },
+  { n: '05', title: 'Черновые основания', text: 'Выравниваем стены и пол, готовим основание под последующие слои отделки.' },
+  { n: '06', title: 'Электрика и сантехника', text: 'Прокладываем кабели и трубы, устанавливаем выводы и проверяем инженерные системы.' },
+  { n: '07', title: 'Чистовая отделка', text: 'Красим стены, укладываем плитку и напольные покрытия, монтируем потолки и двери.' },
+  { n: '08', title: 'Финальная комплектация', text: 'Устанавливаем свет, сантехнику и предусмотренные проектом элементы интерьера.' },
+  { n: '09', title: 'Проверка и передача', text: 'Проверяем результат по этапам, устраняем замечания и передаём квартиру после уборки.' },
+]
+
+const TARIFFS = [
+  {
+    name: 'Комфорт',
+    className: '',
+    text: 'Аккуратный ремонт с проверенными решениями и практичными материалами.',
+    items: ['Работы включены', 'Материалы включены', 'Состав фиксируется в смете'],
+  },
+  {
+    name: 'Комфорт плюс',
+    className: 'tariff-featured',
+    badge: 'Оптимальный баланс',
+    text: 'Больше отделочных решений и инженерии, чем в базовом уровне.',
+    items: [
+      'Работы включены',
+      'Материалы включены',
+      'Расширенная инженерия и свет',
+      'Состав фиксируется в смете',
+    ],
+  },
+  {
+    name: 'Премиум',
+    className: 'tariff-premium',
+    text: 'Сложные решения по геометрии, свету и материалам под индивидуальный проект.',
+    items: [
+      'Работы включены',
+      'Материалы включены',
+      'Индивидуальные решения и авторский надзор',
+      'Состав фиксируется в смете',
+    ],
+  },
+]
+
+const FAQ = [
+  {
+    question: 'Как выбирается тариф ремонта?',
+    answer:
+      'Тариф определяет уровень комплектации, а не заменяет смету. Финальный состав зависит от площади, состояния квартиры, инженерных задач и выбранных материалов.',
+  },
+  {
+    question: 'Можно ли заказать отдельные виды работ?',
+    answer:
+      'Бриф предусматривает косметический, комплексный ремонт и вариант «под ключ». Возможность отдельного этапа определяется после осмотра объекта и уточнения задачи.',
+  },
+  {
+    question: 'Почему стоимость не указана сразу?',
+    answer:
+      'Цена за квадратный метр остаётся ориентиром, пока не известны исходное состояние, объём демонтажа, инженерия и уровень материалов. Поэтому на сайте не используются неподтверждённые суммы.',
+  },
+  {
+    question: 'Когда согласуются электрика и сантехника?',
+    answer:
+      'Расположение света, розеток, выключателей и сантехнических выводов согласуется до штробления и закрытия черновых слоёв.',
+  },
+  {
+    question: 'Можно ли начать работы без полного плана?',
+    answer:
+      'Подготовительные действия возможны после осмотра, но основные работы безопаснее начинать после согласования планировки, инженерии и последовательности этапов.',
+  },
+]
+
+const WALK_STEPS = [
+  {
+    title: 'Начинаем с несущей логики',
+    text: 'Сначала проверяем, как квартира работает: проходы, зоны, инженерия. Отделка идёт последней.',
+  },
+  {
+    title: 'Свет проектируется заранее',
+    text: 'Сценарии освещения закладываются до штробления. Потом перенести их уже нельзя.',
+  },
+  {
+    title: 'Материалы держат геометрию',
+    text: 'Ровные плоскости, точные стыки и согласованные линии формируют аккуратный результат.',
+  },
+]
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+const normalizeText = (value) => value.trim().replace(/\s+/g, ' ')
+
+export default function App() {
+  useSiteMotion()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuButtonRef = useRef(null)
+  const mobileNavRef = useRef(null)
+
+  const closeMenu = ({ restoreFocus = false } = {}) => {
+    setMenuOpen(false)
+    if (restoreFocus) requestAnimationFrame(() => menuButtonRef.current?.focus())
+  }
+
+  useEffect(() => {
+    if (!menuOpen) return undefined
+
+    const bodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    requestAnimationFrame(() => mobileNavRef.current?.querySelector(FOCUSABLE)?.focus())
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        closeMenu({ restoreFocus: true })
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const focusable = Array.from(mobileNavRef.current?.querySelectorAll(FOCUSABLE) || [])
+      if (!focusable.length) return
+      const first = focusable[0]
+      const last = focusable.at(-1)
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    const desktop = window.matchMedia('(min-width: 901px)')
+    const onDesktop = (event) => {
+      if (event.matches) closeMenu()
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    desktop.addEventListener('change', onDesktop)
+
+    return () => {
+      document.body.style.overflow = bodyOverflow
+      document.removeEventListener('keydown', onKeyDown)
+      desktop.removeEventListener('change', onDesktop)
+    }
+  }, [menuOpen])
+
+  return (
+    <>
+      <a className="skip-link" href="#main-content">
+        К основному содержанию
+      </a>
+
+      <header className="site-header">
+        <a
+          className="brand-link"
+          href="#top"
+          aria-label="Стальком Продукт — на главную"
+          onClick={() => closeMenu()}
+        >
+          <Brand />
+        </a>
+
+        <nav className="main-nav" aria-label="Основная навигация">
+          {NAV.map((item) => (
+            <a key={item.href} href={item.href}>
+              {item.label}
+            </a>
+          ))}
+          <a className="nav-cta" href="#calculator">
+            Рассчитать
+            <ArrowRight size={16} />
+          </a>
+        </nav>
+
+        <button
+          ref={menuButtonRef}
+          className="menu-button"
+          type="button"
+          aria-label={menuOpen ? 'Закрыть меню' : 'Открыть меню'}
+          aria-expanded={menuOpen}
+          aria-controls="mobile-navigation"
+          onClick={() => (menuOpen ? closeMenu({ restoreFocus: true }) : setMenuOpen(true))}
+        >
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+      </header>
+
+      {menuOpen ? (
+        <nav
+          ref={mobileNavRef}
+          className="mobile-nav"
+          id="mobile-navigation"
+          aria-label="Мобильная навигация"
+          data-lenis-prevent
+        >
+          {NAV.map((item) => (
+            <a key={item.href} href={item.href} onClick={() => closeMenu()}>
+              {item.label}
+            </a>
+          ))}
+          <a href="#calculator" onClick={() => closeMenu()}>
+            Рассчитать стоимость
+          </a>
+        </nav>
+      ) : null}
+
+      <main id="main-content" tabIndex={-1}>
+        {/* Hero: pinned scene, scroll drives the camera moving into the room. */}
+        <section className="hero-shell" id="top" aria-labelledby="hero-title">
+          <div className="hero-stage" data-hero-stage aria-hidden="true">
+            <div className="hero-fallback" />
+          </div>
+          <div className="hero-veil" aria-hidden="true" />
+
+          <div className="page-shell hero-content">
+            <div data-hero-copy>
+              <p className="eyebrow">Алматы · дизайн и ремонт</p>
+              <h1 id="hero-title" data-split>
+                Ремонт без лишнего шума.
+              </h1>
+              <p className="hero-sub">
+                Смета до старта, один контур ответственности и понятный состав работ на каждом
+                этапе.
+              </p>
+              <div className="hero-actions">
+                <a className="button button-primary" href="#calculator">
+                  Рассчитать стоимость
+                  <ArrowRight size={19} />
+                </a>
+                <a className="button" href="#cases">
+                  Смотреть кейсы
+                  <ArrowRight size={19} />
+                </a>
+              </div>
+              <div className="hero-tags">
+                <span>Работа и материалы</span>
+                <span>Контроль по этапам</span>
+                <span>Сдача с проверкой</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="scroll-cue" aria-hidden="true">
+            <span>Листайте</span>
+          </div>
+        </section>
+
+        {/* Cases */}
+        <section className="section cases-section" id="cases">
+          <div className="page-shell">
+            <div className="section-heading" data-reveal>
+              <p className="eyebrow">Кейсы</p>
+              <h2 data-split>Пространства, которые хочется рассматривать</h2>
+              <p>
+                Раздел пополняется. Площадь, сроки и состав работ по каждому объекту добавим после
+                согласования с заказчиками.
+              </p>
+            </div>
+
+            <div className="case-stack">
+              {CASES.map((item) => (
+                <article
+                  key={item.slug}
+                  className={`case-card${item.wide ? ' case-card-wide' : ''}`}
+                  data-reveal="card"
+                >
+                  <div className="case-image" data-image-reveal>
+                    <picture>
+                      <source
+                        type="image/webp"
+                        srcSet={`/assets/${item.slug}-800.webp 800w, /assets/${item.slug}-1400.webp 1400w, /assets/${item.slug}.webp ${item.width}w`}
+                        sizes={
+                          item.wide
+                            ? '(max-width: 1120px) 100vw, min(100vw, 1280px)'
+                            : '(max-width: 1120px) 100vw, 50vw'
+                        }
+                      />
+                      <img
+                        src={`/assets/${item.slug}.jpg`}
+                        alt={`${item.title}, ${item.room.toLowerCase()}`}
+                        width={item.width}
+                        height={item.height}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    </picture>
+                  </div>
+                  <div className="case-meta">
+                    <h3>{item.title}</h3>
+                    <span>{item.room}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Services */}
+        <section className="section services-section" id="services">
+          <div className="page-shell services-layout">
+            <div className="services-sticky" data-reveal>
+              <p className="eyebrow">Услуги</p>
+              <h2 data-split>Один проект. Один контур ответственности.</h2>
+            </div>
+            <div>
+              {SERVICES.map((service) => (
+                <article className="service-row" key={service.n} data-reveal="row">
+                  <b>{service.n}</b>
+                  <div>
+                    <h3>{service.title}</h3>
+                    <p>{service.text}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* About + the three renovation assurances that replaced the removed statement */}
+        <section className="section about-section" id="about">
+          <div className="page-shell">
+            <div className="about-layout">
+              <div className="about-copy" data-reveal>
+                <p className="eyebrow">О компании</p>
+                <h2 data-split>Стальком Продукт собирает интерьер как точную конструкцию</h2>
+                <p>
+                  Мы ведём ремонт по порядку: сначала планировка и инженерия, затем черновые слои и
+                  только потом отделка. Такой порядок убирает переделки.
+                </p>
+                <p>
+                  Состав работ и уровень материалов фиксируются в смете до выхода на объект. Если по
+                  ходу ремонта меняется задача, новый объём сначала согласуется отдельно.
+                </p>
+                <a className="about-link" href="#process">
+                  Как строится работа
+                  <ArrowRight size={18} />
+                </a>
+              </div>
+
+              <div className="about-image" data-image-reveal data-reveal="card">
+                <picture>
+                  <source
+                    type="image/webp"
+                    srcSet="/assets/hero-interior-800.webp 800w, /assets/hero-interior-1400.webp 1400w, /assets/hero-interior.webp 2048w"
+                    sizes="(max-width: 1120px) 100vw, 50vw"
+                  />
+                  <img
+                    src="/assets/hero-interior.jpg"
+                    alt="Интерьер квартиры после ремонта: кухня-гостиная в графитовой гамме"
+                    width={2048}
+                    height={1448}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </picture>
+              </div>
+            </div>
+
+            <div className="assurance-grid" data-stagger>
+              {ASSURANCES.map((item) => (
+                <article key={item.title}>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Scrubbed walkthrough: scroll continues moving through the space */}
+        <section className="walk-scene" data-walk aria-label="Как мы ведём ремонт">
+          <div className="walk-media" data-walk-media aria-hidden="true" />
+          <div className="walk-grade" aria-hidden="true" />
+          <div className="page-shell walk-copy">
+            {WALK_STEPS.map((step) => (
+              <div className="walk-step" data-walk-step key={step.title}>
+                <h2>{step.title}</h2>
+                <p>{step.text}</p>
+              </div>
+            ))}
+          </div>
+          <div className="walk-progress" data-walk-progress aria-hidden="true">
+            <i />
+          </div>
+        </section>
+
+        {/* Process */}
+        <section className="section process-section" id="process">
+          <div className="page-shell">
+            <div className="section-heading" data-reveal>
+              <p className="eyebrow">Процесс</p>
+              <h2 data-split>Девять этапов от замера до передачи квартиры</h2>
+            </div>
+            <ol className="process-list">
+              {PROCESS.map((step) => (
+                <li key={step.n} data-reveal="row">
+                  <b>{step.n}</b>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* Price */}
+        <section className="section price-section" id="price">
+          <div className="page-shell">
+            <div className="section-heading" data-reveal>
+              <p className="eyebrow">Прайс</p>
+              <h2 data-split>Три уровня комплектации</h2>
+              <p>
+                Во всех тарифах учитываются работа и материалы. Точный состав и стоимость
+                фиксируются после замера и брифа.
+              </p>
+            </div>
+
+            <div className="tariff-grid">
+              {TARIFFS.map((tariff) => (
+                <article className={`tariff ${tariff.className}`} key={tariff.name} data-reveal="card">
+                  <div className="tariff-head">
+                    <h3>{tariff.name}</h3>
+                    {tariff.badge ? <span>{tariff.badge}</span> : null}
+                  </div>
+                  <p>{tariff.text}</p>
+                  <div className="tariff-price">
+                    <strong>Стоимость уточняется</strong>
+                    <small>после замера и состава работ</small>
+                  </div>
+                  <ul>
+                    {tariff.items.map((item) => (
+                      <li key={item}>
+                        <Check size={17} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <a className="button tariff-button" href="#calculator">
+                    Уточнить состав
+                    <ArrowRight size={18} />
+                  </a>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Brief — mechanics preserved exactly */}
+        <Brief />
+
+        <section className="section faq-section" id="faq">
+          <div className="page-shell faq-layout">
+            <div className="section-heading" data-reveal>
+              <p className="eyebrow">Вопросы</p>
+              <h2 data-split>Что важно уточнить до начала ремонта</h2>
+            </div>
+            <div className="faq-list">
+              {FAQ.map((item) => (
+                <details key={item.question} data-reveal="row">
+                  <summary>{item.question}</summary>
+                  <p>{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Reviews */}
+        <section className="section reviews-section" id="reviews">
+          <div className="page-shell reviews-layout">
+            <div className="reviews-copy" data-reveal>
+              <p className="eyebrow">Отзывы</p>
+              <h2 data-split>Оставить отзыв о ремонте</h2>
+              <p>
+                Подтверждённые отзывы появятся здесь после согласования публикации. Пока можно
+                подготовить текст — форма ничего не отправляет без подключённого канала.
+              </p>
+            </div>
+            <ReviewForm />
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="final-cta">
+          <div className="final-media" data-image-reveal aria-hidden="true">
+            <picture>
+              <source
+                type="image/webp"
+                srcSet="/assets/case-dark-800.webp 800w, /assets/case-dark-1400.webp 1400w, /assets/case-dark.webp 1800w"
+                sizes="100vw"
+              />
+              <img
+                src="/assets/case-dark.jpg"
+                alt=""
+                width={1800}
+                height={1264}
+                loading="lazy"
+                decoding="async"
+              />
+            </picture>
+          </div>
+          <div className="page-shell final-content" data-reveal>
+            <h2 data-split>Начнём с вашей квартиры.</h2>
+            <a className="button button-primary" href="#contacts">
+              Обсудить проект
+              <ArrowRight size={19} />
+            </a>
+          </div>
+        </section>
+
+        {/* Contacts */}
+        <section className="section contacts-section" id="contacts">
+          <div className="page-shell contacts-layout">
+            <div className="contacts-copy" data-reveal>
+              <p className="eyebrow">Контакты</p>
+              <h2 data-split>Алматы. Начнём с короткого разговора.</h2>
+              <p>
+                Оставьте имя и телефон — вернёмся с вопросами по объёму работ и договоримся о
+                замере.
+              </p>
+            </div>
+            <ContactForm />
+          </div>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <div className="page-shell footer-inner">
+          <a href="#top" aria-label="Стальком Продукт — наверх">
+            <Brand />
+          </a>
+          <p>Ремонт квартир в Алматы</p>
+          <p>© {new Date().getFullYear()} Стальком Продукт</p>
+        </div>
+      </footer>
+    </>
+  )
+}
+
+function ReviewForm() {
+  const [values, setValues] = useState({ name: '', object: '', review: '' })
+  const [errors, setErrors] = useState({})
+  const [status, setStatus] = useState(null)
+
+  const update = (field) => (event) => {
+    setValues((current) => ({ ...current, [field]: event.target.value }))
+    setErrors((current) => ({ ...current, [field]: '' }))
+    setStatus(null)
+  }
+
+  const submit = (event) => {
+    event.preventDefault()
+    const name = normalizeText(values.name)
+    const review = normalizeText(values.review)
+    const nextErrors = {}
+
+    if (name.length < 2) nextErrors.name = 'Укажите имя — минимум 2 символа.'
+    if (review.length < 20) nextErrors.review = 'Опишите впечатление подробнее — минимум 20 символов.'
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors)
+      setStatus({ type: 'error', text: 'Проверьте отмеченные поля.' })
+      requestAnimationFrame(() => event.currentTarget.querySelector('[aria-invalid="true"]')?.focus())
+      return
+    }
+
+    const payload = { name, object: normalizeText(values.object), review }
+    void payload
+    setStatus({
+      type: 'ready',
+      text: 'Текст проверен и сохранён только в этой форме. Отправка появится после подключения канала модерации.',
+    })
+  }
+
+  return (
+    <form className="field-grid" data-reveal="card" noValidate onSubmit={submit}>
+      <div className="field">
+        <label htmlFor="review-name">Ваше имя</label>
+        <input
+          id="review-name"
+          name="name"
+          type="text"
+          autoComplete="name"
+          minLength={2}
+          maxLength={80}
+          value={values.name}
+          aria-invalid={Boolean(errors.name)}
+          aria-describedby={errors.name ? 'review-name-error' : undefined}
+          onChange={update('name')}
+          required
+        />
+        {errors.name ? <p className="field-error" id="review-name-error">{errors.name}</p> : null}
+      </div>
+      <div className="field">
+        <label htmlFor="review-object">Номер договора или объекта <span>(необязательно)</span></label>
+        <input
+          id="review-object"
+          name="object"
+          type="text"
+          maxLength={80}
+          value={values.object}
+          onChange={update('object')}
+        />
+      </div>
+      <div className="field">
+        <label htmlFor="review-text">Ваш отзыв</label>
+        <textarea
+          id="review-text"
+          name="review"
+          rows={4}
+          minLength={20}
+          maxLength={1200}
+          value={values.review}
+          aria-invalid={Boolean(errors.review)}
+          aria-describedby={errors.review ? 'review-text-error' : undefined}
+          onChange={update('review')}
+          required
+        />
+        {errors.review ? <p className="field-error" id="review-text-error">{errors.review}</p> : null}
+      </div>
+      <button className="button button-primary" type="submit">
+        Проверить отзыв
+        <ArrowRight size={18} />
+      </button>
+      {status ? (
+        <p
+          className={`form-status form-status-${status.type}`}
+          role={status.type === 'error' ? 'alert' : 'status'}
+          aria-live={status.type === 'error' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {status.text}
+        </p>
+      ) : null}
+    </form>
+  )
+}
+
+function ContactForm() {
+  const [values, setValues] = useState({ name: '', phone: '' })
+  const [errors, setErrors] = useState({})
+  const [status, setStatus] = useState(null)
+
+  const update = (field) => (event) => {
+    setValues((current) => ({ ...current, [field]: event.target.value }))
+    setErrors((current) => ({ ...current, [field]: '' }))
+    setStatus(null)
+  }
+
+  const submit = (event) => {
+    event.preventDefault()
+    const name = normalizeText(values.name)
+    const phone = normalizeText(values.phone)
+    const phoneDigits = phone.replace(/\D/g, '')
+    const nextErrors = {}
+
+    if (name.length < 2) nextErrors.name = 'Укажите имя — минимум 2 символа.'
+    if (!/^[+\d][\d\s()-]{8,20}$/.test(phone) || phoneDigits.length < 10 || phoneDigits.length > 15) {
+      nextErrors.phone = 'Введите номер из 10–15 цифр, например +7 700 000 00 00.'
+    }
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors)
+      setStatus({ type: 'error', text: 'Проверьте имя и номер телефона.' })
+      requestAnimationFrame(() => event.currentTarget.querySelector('[aria-invalid="true"]')?.focus())
+      return
+    }
+
+    const payload = { name, phone }
+    void payload
+    setStatus({
+      type: 'ready',
+      text: 'Контакты проверены, но не отправлены: рабочий канал компании ещё не подключён.',
+    })
+  }
+
+  return (
+    <form className="field-grid" data-reveal="card" noValidate onSubmit={submit}>
+      <div className="field">
+        <label htmlFor="contact-name">Имя</label>
+        <input
+          id="contact-name"
+          name="name"
+          type="text"
+          autoComplete="name"
+          minLength={2}
+          maxLength={80}
+          value={values.name}
+          aria-invalid={Boolean(errors.name)}
+          aria-describedby={errors.name ? 'contact-name-error' : undefined}
+          onChange={update('name')}
+          required
+        />
+        {errors.name ? <p className="field-error" id="contact-name-error">{errors.name}</p> : null}
+      </div>
+      <div className="field">
+        <label htmlFor="contact-phone">Телефон</label>
+        <input
+          id="contact-phone"
+          name="phone"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder="+7 700 000 00 00"
+          minLength={10}
+          maxLength={21}
+          value={values.phone}
+          aria-invalid={Boolean(errors.phone)}
+          aria-describedby={errors.phone ? 'contact-phone-error' : 'contact-phone-help'}
+          onChange={update('phone')}
+          required
+        />
+        <p className="field-help" id="contact-phone-help">Допустимы цифры, пробелы, скобки, «+» и «-».</p>
+        {errors.phone ? <p className="field-error" id="contact-phone-error">{errors.phone}</p> : null}
+      </div>
+      <button className="button button-primary" type="submit">
+        Проверить контакты
+        <ArrowRight size={18} />
+      </button>
+      {status ? (
+        <p
+          className={`form-status form-status-${status.type}`}
+          role={status.type === 'error' ? 'alert' : 'status'}
+          aria-live={status.type === 'error' ? 'assertive' : 'polite'}
+          aria-atomic="true"
+        >
+          {status.text}
+        </p>
+      ) : null}
+    </form>
+  )
+}
