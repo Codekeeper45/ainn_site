@@ -164,8 +164,8 @@ const FOCUSABLE =
 
 const normalizeText = (value) => value.trim().replace(/\s+/g, ' ')
 
-export default function App() {
-  useSiteMotion()
+export default function App({ adminMode = false }) {
+  useSiteMotion(adminMode)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButtonRef = useRef(null)
   const mobileNavRef = useRef(null)

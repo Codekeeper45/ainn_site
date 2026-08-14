@@ -45,7 +45,10 @@ function setStaticMotionState() {
     '[data-reveal], [data-split], [data-stagger], [data-stagger] > *, [data-walk-step]',
     { autoAlpha: 1, clearProps: 'all' },
   )
-  gsap.set('[data-split] .split-word', { yPercent: 0, autoAlpha: 1, clearProps: 'all' })
+  const splitWords = document.querySelectorAll('[data-split] .split-word')
+  if (splitWords.length) {
+    gsap.set(splitWords, { yPercent: 0, autoAlpha: 1, clearProps: 'all' })
+  }
 }
 
 /**
@@ -99,8 +102,14 @@ function safelyDispose(scene) {
   }
 }
 
-export function useSiteMotion() {
+export function useSiteMotion(disabled = false) {
   useEffect(() => {
+    if (disabled) {
+      setStaticMotionState()
+      setFlowWalkLayout()
+      return undefined
+    }
+
     let disposed = false
     const media = gsap.matchMedia()
 
@@ -428,5 +437,5 @@ export function useSiteMotion() {
       window.removeEventListener('load', refresh)
       media.revert()
     }
-  }, [])
+  }, [disabled])
 }

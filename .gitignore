@@ -2,5 +2,6 @@ node_modules/
 dist/
 .vite/
 .zcode/
+.site-data/
 *.log
 .DS_Store

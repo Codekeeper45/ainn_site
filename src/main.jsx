@@ -1,6 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import AdminGate from './admin/AdminGate.jsx'
+import { PublicContentRuntime } from './admin/contentRuntime.jsx'
 import 'lenis/dist/lenis.css'
 import './styles.css'
 
@@ -30,8 +32,19 @@ if (!window.location.hash) {
 window.addEventListener('hashchange', scrollToHash)
 window.addEventListener('popstate', scrollToHash)
 
+const isAdminRoute = window.location.pathname.replace(/\/+$/, '') === '/admin'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    {isAdminRoute ? (
+      <AdminGate>
+        <App adminMode />
+      </AdminGate>
+    ) : (
+      <>
+        <App />
+        <PublicContentRuntime />
+      </>
+    )}
   </StrictMode>,
 )
