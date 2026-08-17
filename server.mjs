@@ -12,6 +12,9 @@ const uploadsDir = join(dataDir, 'uploads')
 const contentFile = join(dataDir, 'content.json')
 const host = process.env.HOST || '127.0.0.1'
 const port = Number(process.env.PORT || 4175)
+// Keep the editor behind an explicit feature flag. The default is locked down;
+// set ADMIN_ENABLED=true when the owner is ready to use the panel again.
+const adminEnabled = process.env.ADMIN_ENABLED === 'true'
 const adminUser = process.env.ADMIN_USER || 'admin'
 const adminPassword = process.env.ADMIN_PASSWORD || 'stalkom-demo-2026'
 const demoCredentials = process.env.ADMIN_USER || process.env.ADMIN_PASSWORD
@@ -215,6 +218,10 @@ const server = http.createServer(async (request, response) => {
     const url = new URL(request.url || '/', 'http://localhost')
     const pathname = url.pathname
 
+    if (!adminEnabled && (pathname === '/admin' || pathname === '/admin/' || pathname.startsWith('/api/admin/'))) {
+      return json(response, 503, { error: 'Админ-панель временно отключена.' })
+    }
+
     if (pathname === '/api/content' && request.method === 'GET') {
       return json(response, 200, await loadContent())
     }
@@ -304,5 +311,5 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(port, host, () => {
   console.log(`Стальком Продукт: http://${host}:${port}`)
-  console.log(`Админ-панель: http://${host}:${port}/admin`)
+  console.log(`Админ-панель: ${adminEnabled ? `http://${host}:${port}/admin` : 'временно отключена (ADMIN_ENABLED=true для включения)'}`)
 })
