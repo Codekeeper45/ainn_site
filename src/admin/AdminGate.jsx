@@ -30,7 +30,7 @@ async function api(path, options = {}) {
 }
 
 export default function AdminGate({ children }) {
-  const [state, setState] = useState({ checking: true, authenticated: false, demoCredentials: null })
+  const [state, setState] = useState({ checking: true, authenticated: false, demoCredentials: null, saveEnabled: false })
 
   useEffect(() => {
     let disposed = false
@@ -39,8 +39,9 @@ export default function AdminGate({ children }) {
         checking: false,
         authenticated: result.authenticated,
         demoCredentials: result.demoCredentials || null,
+        saveEnabled: result.saveEnabled === true,
       }))
-      .catch(() => !disposed && setState({ checking: false, authenticated: false, demoCredentials: null }))
+      .catch(() => !disposed && setState({ checking: false, authenticated: false, demoCredentials: null, saveEnabled: false }))
     return () => {
       disposed = true
     }
@@ -58,6 +59,7 @@ export default function AdminGate({ children }) {
     <>
       {children}
       <InlineEditor
+        saveEnabled={state.saveEnabled}
         onLogout={async () => {
           await api('/api/admin/logout', { method: 'POST' }).catch(() => {})
           setState((current) => ({ ...current, checking: false, authenticated: false }))
@@ -143,7 +145,7 @@ function AdminLogin({ demoCredentials, onSuccess }) {
   )
 }
 
-function InlineEditor({ onLogout }) {
+function InlineEditor({ onLogout, saveEnabled }) {
   const [mode, setMode] = useState('text')
   const [selected, setSelected] = useState(null)
   const [dirty, setDirty] = useState(false)
@@ -348,6 +350,10 @@ function InlineEditor({ onLogout }) {
   }
 
   const save = async () => {
+    if (!saveEnabled) {
+      setStatus('Сохранение временно отключено. Изменения видны только до обновления страницы.')
+      return
+    }
     setSaving(true)
     setStatus('Сохраняем изменения…')
     try {
@@ -401,10 +407,12 @@ function InlineEditor({ onLogout }) {
         accept="image/jpeg,image/png,image/webp,image/gif"
         onChange={(event) => uploadImage(event.target.files?.[0])}
       />
-      <p className={dirty ? 'admin-status dirty' : 'admin-status'}>{status}</p>
+      <p className={dirty ? 'admin-status dirty' : 'admin-status'}>
+        {saveEnabled ? status : `Сохранение отключено · ${status}`}
+      </p>
       <div className="admin-primary-actions">
-        <button data-admin-save className="admin-save" type="button" onClick={save} disabled={saving}>
-          {saving ? 'Сохранение…' : dirty ? 'Сохранить всё •' : 'Сохранить всё'}
+        <button data-admin-save className="admin-save" type="button" onClick={save} disabled={saving || !saveEnabled}>
+          {!saveEnabled ? 'Сохранение отключено' : saving ? 'Сохранение…' : dirty ? 'Сохранить всё •' : 'Сохранить всё'}
         </button>
         <a href="/" target="_blank" rel="noreferrer">Открыть сайт</a>
         <button type="button" onClick={onLogout}>Выйти</button>

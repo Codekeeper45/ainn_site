@@ -12,9 +12,10 @@ const uploadsDir = join(dataDir, 'uploads')
 const contentFile = join(dataDir, 'content.json')
 const host = process.env.HOST || '127.0.0.1'
 const port = Number(process.env.PORT || 4175)
-// Keep the editor behind an explicit feature flag. The default is locked down;
-// set ADMIN_ENABLED=true when the owner is ready to use the panel again.
-const adminEnabled = process.env.ADMIN_ENABLED === 'true'
+// Keep the editor available for review, while requiring an explicit opt-in to
+// persist changes. Set ADMIN_SAVE_ENABLED=true when the owner is ready to save.
+const adminEnabled = process.env.ADMIN_ENABLED !== 'false'
+const adminSaveEnabled = process.env.ADMIN_SAVE_ENABLED === 'true'
 const adminUser = process.env.ADMIN_USER || 'admin'
 const adminPassword = process.env.ADMIN_PASSWORD || 'stalkom-demo-2026'
 const demoCredentials = process.env.ADMIN_USER || process.env.ADMIN_PASSWORD
@@ -231,6 +232,7 @@ const server = http.createServer(async (request, response) => {
         authenticated: Boolean(sessionFor(request)),
         user: adminUser,
         demoCredentials,
+        saveEnabled: adminSaveEnabled,
       })
     }
 
@@ -262,6 +264,9 @@ const server = http.createServer(async (request, response) => {
 
     if (pathname === '/api/admin/content' && request.method === 'PUT') {
       if (!requireAdmin(request, response)) return
+      if (!adminSaveEnabled) {
+        return json(response, 423, { error: 'Сохранение временно отключено. Изменения видны только до обновления страницы.' })
+      }
       const body = await readJson(request, 2 * 1024 * 1024)
       return json(response, 200, await saveContent(body))
     }
@@ -312,4 +317,5 @@ const server = http.createServer(async (request, response) => {
 server.listen(port, host, () => {
   console.log(`Стальком Продукт: http://${host}:${port}`)
   console.log(`Админ-панель: ${adminEnabled ? `http://${host}:${port}/admin` : 'временно отключена (ADMIN_ENABLED=true для включения)'}`)
+  console.log(`Сохранение изменений: ${adminSaveEnabled ? 'включено' : 'временно отключено (ADMIN_SAVE_ENABLED=true для включения)'}`)
 })
