@@ -70,6 +70,40 @@ export function ContentProvider({ initialContent, children }) {
     setDirty(false)
   }, [])
 
+  const setText = useCallback((key, value) => {
+    setContent((current) => ({
+      ...current,
+      texts: { ...(current.texts || {}), [key]: value },
+    }))
+    setDirty(true)
+  }, [])
+
+  const removeText = useCallback((key) => {
+    setContent((current) => {
+      const texts = { ...(current.texts || {}) }
+      delete texts[key]
+      return { ...current, texts }
+    })
+    setDirty(true)
+  }, [])
+
+  const setImage = useCallback((key, entry) => {
+    setContent((current) => ({
+      ...current,
+      images: { ...(current.images || {}), [key]: entry },
+    }))
+    setDirty(true)
+  }, [])
+
+  const removeImage = useCallback((key) => {
+    setContent((current) => {
+      const images = { ...(current.images || {}) }
+      delete images[key]
+      return { ...current, images }
+    })
+    setDirty(true)
+  }, [])
+
   const value = useMemo(
     () => ({
       content,
@@ -80,8 +114,25 @@ export function ContentProvider({ initialContent, children }) {
       removeItem,
       moveItem,
       replaceContent,
+      setText,
+      removeText,
+      setImage,
+      removeImage,
     }),
-    [content, dirty, getCollection, updateItem, addItem, removeItem, moveItem, replaceContent],
+    [
+      content,
+      dirty,
+      getCollection,
+      updateItem,
+      addItem,
+      removeItem,
+      moveItem,
+      replaceContent,
+      setText,
+      removeText,
+      setImage,
+      removeImage,
+    ],
   )
 
   return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>

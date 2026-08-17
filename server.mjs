@@ -4,6 +4,7 @@ import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises'
 import { extname, join, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import http from 'node:http'
+import { emptyContent, normalizeCollections } from './src/content/model.js'
 
 const rootDir = fileURLToPath(new URL('.', import.meta.url))
 const distDir = join(rootDir, 'dist')
@@ -24,8 +25,6 @@ const demoCredentials = process.env.ADMIN_USER || process.env.ADMIN_PASSWORD
 const sessionHours = 8
 const sessions = new Map()
 const loginAttempts = new Map()
-
-const emptyContent = () => ({ version: 1, updatedAt: null, texts: {}, images: {} })
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -87,6 +86,7 @@ function validateContent(value) {
     updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : null,
     texts,
     images,
+    collections: normalizeCollections(source.collections),
   }
 }
 

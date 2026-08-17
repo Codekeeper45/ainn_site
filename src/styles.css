@@ -1633,6 +1633,289 @@ textarea {
   filter: grayscale(1) !important;
 }
 
+/* ---------- Block editing mode ------------------------------------------ */
+
+.admin-block {
+  position: relative;
+  outline: 1px dashed rgb(255 77 0 / 30%);
+  outline-offset: 4px;
+}
+
+.admin-block:hover {
+  outline: 2px solid rgb(255 77 0 / 62%);
+}
+
+.admin-block-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 30;
+  display: flex;
+  gap: 6px;
+}
+
+.admin-block-controls button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  background: rgb(8 8 8 / 92%);
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 9px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.admin-block-controls button:hover:not(:disabled) {
+  color: #fff;
+  border-color: rgb(255 77 0 / 75%);
+}
+
+.admin-block-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.admin-block-controls button.danger:hover {
+  color: #ff9a7a;
+  border-color: rgb(255 77 0 / 75%);
+}
+
+.admin-block-add {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0 4px;
+}
+
+.case-stack .admin-block-add,
+.assurance-grid .admin-block-add,
+.tariff-grid .admin-block-add {
+  grid-column: 1 / -1;
+}
+
+.admin-block-add button {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 18px;
+  color: var(--muted-strong);
+  font: inherit;
+  background: transparent;
+  border: 1px dashed rgb(255 255 255 / 30%);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.admin-block-add button:hover:not(:disabled) {
+  color: #fff;
+  border-color: rgb(255 77 0 / 70%);
+  background: rgb(255 77 0 / 6%);
+}
+
+.admin-block-add button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- Block edit panel --------------------------------------------- */
+
+.admin-block-panel {
+  position: fixed;
+  top: calc(var(--header-h, 72px) + 16px);
+  right: 16px;
+  bottom: 112px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100vw - 32px));
+  color: var(--text);
+  background: rgb(8 8 8 / 96%);
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 18px;
+  box-shadow: 0 18px 70px rgb(0 0 0 / 58%);
+  backdrop-filter: blur(18px);
+}
+
+.admin-block-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+}
+
+.admin-block-panel-head h2 {
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+
+.admin-block-panel-head button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--text);
+  background: #171717;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.admin-block-panel-head button:hover {
+  color: #fff;
+  border-color: rgb(255 77 0 / 75%);
+}
+
+.admin-block-panel-body {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.admin-block-panel-body label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted-strong);
+}
+
+.admin-block-panel-body input[type='text'],
+.admin-block-panel-body textarea,
+.admin-block-panel-body select {
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--text);
+  font: inherit;
+  background: #141414;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+}
+
+.admin-block-panel-body input:focus,
+.admin-block-panel-body textarea:focus,
+.admin-block-panel-body select:focus {
+  outline: 2px solid rgb(255 77 0 / 60%);
+  outline-offset: 1px;
+}
+
+.admin-block-checkbox {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.admin-block-checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.admin-block-image-label {
+  font-size: 0.85rem;
+  color: var(--muted-strong);
+}
+
+.admin-block-image-preview {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+}
+
+.admin-block-image-empty {
+  padding: 18px 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+  background: #141414;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+}
+
+.admin-block-image-actions,
+.admin-block-list-field > button {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-block-image-actions button,
+.admin-block-list-field > button,
+.admin-block-list-row button {
+  min-height: 40px;
+  padding: 8px 14px;
+  color: var(--text);
+  font: inherit;
+  background: #171717;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.admin-block-image-actions button:hover:not(:disabled),
+.admin-block-list-field > button:hover:not(:disabled),
+.admin-block-list-row button:hover {
+  color: #fff;
+  border-color: rgb(255 77 0 / 75%);
+}
+
+.admin-block-image-actions button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.admin-block-list-field {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-block-list-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.admin-block-list-row input {
+  width: 100%;
+  padding: 10px 12px;
+  color: var(--text);
+  font: inherit;
+  background: #141414;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+}
+
+.admin-block-list-row button {
+  min-height: 0;
+  padding: 0 12px;
+}
+
+.admin-block-list-row button.danger {
+  color: #ff9a7a;
+}
+
+.admin-block-panel-hint {
+  margin: 0;
+  padding: 12px 18px 16px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  border-top: 1px solid rgb(255 255 255 / 12%);
+}
+
+@media (width <= 900px) {
+  .admin-block-panel {
+    top: auto;
+    bottom: 240px;
+    max-height: 52svh;
+  }
+}
+
 @media (width <= 900px) {
   .admin-mode body {
     padding-bottom: 230px;

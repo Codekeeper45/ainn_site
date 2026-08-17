@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
+import { useContent } from '../content/ContentContext.jsx'
+
+export { emptyContent } from '../content/model.js'
 
 const TEXT_SELECTOR = 'h1,h2,h3,p,summary,legend,label,a,button,li,span,strong,small'
 const BACKGROUND_SELECTOR = '.hero-fallback, .walk-media'
 const originalImages = new WeakMap()
-
-export const emptyContent = () => ({ version: 1, updatedAt: null, texts: {}, images: {} })
 
 function contentScope(element) {
   const scope = element.closest('.site-header, #main-content, .site-footer, .mobile-nav')
@@ -15,6 +16,23 @@ function contentScope(element) {
   return { element: scope, name: 'mobile-navigation' }
 }
 
+const isPinSpacer = (element) => Boolean(element?.classList?.contains('pin-spacer'))
+
+// GSAP ScrollTrigger wraps each pinned section in a `div.pin-spacer` on the
+// public page, but pinning is disabled in admin mode. Unwrap those wrappers so
+// the same element resolves to the same positional key in both contexts;
+// otherwise every override saved in admin would miss its target publicly.
+function effectiveParent(element) {
+  const parent = element.parentElement
+  return isPinSpacer(parent) ? parent.parentElement : parent
+}
+
+function effectiveChildren(parent) {
+  return Array.from(parent.children).flatMap((child) =>
+    isPinSpacer(child) ? Array.from(child.children) : [child],
+  )
+}
+
 function elementPath(element) {
   const scope = contentScope(element)
   if (!scope) return ''
@@ -22,11 +40,13 @@ function elementPath(element) {
   let current = element
 
   while (current && current !== scope.element) {
-    const siblings = Array.from(current.parentElement?.children || []).filter(
+    const parent = effectiveParent(current)
+    if (!parent) break
+    const siblings = effectiveChildren(parent).filter(
       (sibling) => sibling.tagName === current.tagName,
     )
     parts.unshift(`${current.tagName.toLowerCase()}:${siblings.indexOf(current) + 1}`)
-    current = current.parentElement
+    current = parent
   }
 
   return `${scope.name}/${parts.join('/')}`
@@ -42,6 +62,9 @@ export function imageKey(element) {
 
 function hasEditableText(element) {
   if (element.closest('[data-admin-ui]')) return false
+  // Collection content is edited through the block panel; keeping positional
+  // text keys away from it prevents overrides from drifting when items move.
+  if (element.closest('[data-collection-item]')) return false
   if (element.matches('[data-split]')) return Boolean(element.textContent?.trim())
   if (element.closest('.brief-summary, .form-status, .field-error, output')) return false
   if (element.children.length) return false
@@ -54,7 +77,10 @@ export function collectTextTargets() {
 
 export function collectImageTargets() {
   const images = Array.from(document.querySelectorAll('img')).filter(
-    (element) => !element.closest('[data-admin-ui]') && contentScope(element),
+    (element) =>
+      !element.closest('[data-admin-ui]') &&
+      !element.closest('[data-collection-item]') &&
+      contentScope(element),
   )
   const backgrounds = Array.from(document.querySelectorAll(BACKGROUND_SELECTOR)).filter(
     (element) => contentScope(element),
@@ -132,7 +158,7 @@ export function applyImage(element, entry, { admin = false } = {}) {
 }
 
 export function applyContent(content, options = {}) {
-  const safeContent = content || emptyContent()
+  const safeContent = content || {}
   collectTextTargets().forEach((element) => {
     const value = safeContent.texts?.[textKey(element)]
     if (typeof value === 'string' && element.textContent !== value) element.textContent = value
@@ -149,28 +175,25 @@ export async function fetchContent() {
   return response.json()
 }
 
+/** Applies saved text/image overrides on the public site. Collections are
+ * rendered by React directly from the same content, so only the legacy
+ * positional overrides need DOM patching here. */
 export function PublicContentRuntime() {
+  const { content } = useContent()
+
   useEffect(() => {
     let disposed = false
-    let content = null
     let scheduled = 0
 
     const apply = () => {
       scheduled = 0
-      if (!disposed && content) applyContent(content)
+      if (!disposed) applyContent(content)
     }
     const schedule = () => {
       if (!scheduled) scheduled = requestAnimationFrame(apply)
     }
 
-    fetchContent()
-      .then((loaded) => {
-        if (disposed) return
-        content = loaded
-        apply()
-      })
-      .catch(() => {})
-
+    apply()
     const observer = new MutationObserver(schedule)
     observer.observe(document.getElementById('root'), { childList: true, subtree: true })
 
@@ -179,7 +202,7 @@ export function PublicContentRuntime() {
       observer.disconnect()
       if (scheduled) cancelAnimationFrame(scheduled)
     }
-  }, [])
+  }, [content])
 
   return null
 }

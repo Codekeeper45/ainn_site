@@ -3,160 +3,15 @@ import { useSiteMotion } from './useSiteMotion.js'
 import { ArrowRight, Check, Menu, X } from './components/Icons.jsx'
 import Brand from './components/Brand.jsx'
 import Brief from './components/Brief.jsx'
+import { useCollection } from './content/ContentContext.jsx'
+import { AddBlockButton, CollectionItem } from './content/CollectionItem.jsx'
+import { tariffClassName } from './content/model.js'
 
 const NAV = [
   { href: '#about', label: 'О нас' },
   { href: '#price', label: 'Прайс' },
   { href: '#cases', label: 'Кейсы' },
   { href: '#contacts', label: 'Контакты' },
-]
-
-const CASES = [
-  {
-    slug: 'case-bedroom',
-    title: 'Тихая геометрия',
-    room: 'Спальня',
-    wide: true,
-    width: 1800,
-    height: 900,
-  },
-  { slug: 'case-kitchen', title: 'Светлый камень', room: 'Кухня', width: 1800, height: 1080 },
-  { slug: 'case-bathroom', title: 'Чистый ритм', room: 'Ванная', width: 1800, height: 1201 },
-  {
-    slug: 'case-dark',
-    title: 'Графичный контраст',
-    room: 'Кухня-гостиная',
-    wide: true,
-    width: 1800,
-    height: 1264,
-  },
-]
-
-const SERVICES = [
-  {
-    n: '01',
-    title: 'Планирование и дизайн',
-    text: 'Планировка, инженерные решения и сценарии света согласуются до начала работ.',
-  },
-  {
-    n: '02',
-    title: 'Черновые и инженерные работы',
-    text: 'Демонтаж, стены, стяжка, электрика и сантехника по проекту.',
-  },
-  {
-    n: '03',
-    title: 'Чистовая отделка',
-    text: 'Штукатурка, покраска, плитка, полы, двери и потолки.',
-  },
-  {
-    n: '04',
-    title: 'Комплектация объекта',
-    text: 'Подбор и поставка материалов, сантехники и света под утверждённый уровень.',
-  },
-]
-
-// Kept from the approved version: these three are specifically about renovation
-// work, so they stay. Only the abstract statement headline was removed.
-const ASSURANCES = [
-  {
-    title: 'Сначала логика',
-    text: 'Планировка, инженерия и сценарии света согласуются до чистовой отделки.',
-  },
-  {
-    title: 'Смета до старта',
-    text: 'Состав работ и уровень материалов обсуждаются до выхода на объект.',
-  },
-  {
-    title: 'Контроль по этапам',
-    text: 'Каждый следующий слой начинается после проверки предыдущего.',
-  },
-]
-
-const PROCESS = [
-  { n: '01', title: 'Знакомство и замеры', text: 'Осматриваем квартиру, фиксируем размеры, инженерные узлы и исходное состояние.' },
-  { n: '02', title: 'Задача и планировка', text: 'Согласуем сценарии помещений, размещение мебели, света и коммуникаций.' },
-  { n: '03', title: 'Состав работ и смета', text: 'Определяем объёмы, уровень материалов и последовательность работ до старта.' },
-  { n: '04', title: 'Подготовка и демонтаж', text: 'Освобождаем объект и демонтируем только то, что предусмотрено согласованным планом.' },
-  { n: '05', title: 'Черновые основания', text: 'Выравниваем стены и пол, готовим основание под последующие слои отделки.' },
-  { n: '06', title: 'Электрика и сантехника', text: 'Прокладываем кабели и трубы, устанавливаем выводы и проверяем инженерные системы.' },
-  { n: '07', title: 'Чистовая отделка', text: 'Красим стены, укладываем плитку и напольные покрытия, монтируем потолки и двери.' },
-  { n: '08', title: 'Финальная комплектация', text: 'Устанавливаем свет, сантехнику и предусмотренные проектом элементы интерьера.' },
-  { n: '09', title: 'Проверка и передача', text: 'Проверяем результат по этапам, устраняем замечания и передаём квартиру после уборки.' },
-]
-
-const TARIFFS = [
-  {
-    name: 'Комфорт',
-    className: '',
-    text: 'Аккуратный ремонт с проверенными решениями и практичными материалами.',
-    items: ['Работы включены', 'Материалы включены', 'Состав фиксируется в смете'],
-  },
-  {
-    name: 'Комфорт плюс',
-    className: 'tariff-featured',
-    badge: 'Оптимальный баланс',
-    text: 'Больше отделочных решений и инженерии, чем в базовом уровне.',
-    items: [
-      'Работы включены',
-      'Материалы включены',
-      'Расширенная инженерия и свет',
-      'Состав фиксируется в смете',
-    ],
-  },
-  {
-    name: 'Премиум',
-    className: 'tariff-premium',
-    text: 'Сложные решения по геометрии, свету и материалам под индивидуальный проект.',
-    items: [
-      'Работы включены',
-      'Материалы включены',
-      'Индивидуальные решения и авторский надзор',
-      'Состав фиксируется в смете',
-    ],
-  },
-]
-
-const FAQ = [
-  {
-    question: 'Как выбирается тариф ремонта?',
-    answer:
-      'Тариф определяет уровень комплектации, а не заменяет смету. Финальный состав зависит от площади, состояния квартиры, инженерных задач и выбранных материалов.',
-  },
-  {
-    question: 'Можно ли заказать отдельные виды работ?',
-    answer:
-      'Бриф предусматривает косметический, комплексный ремонт и вариант «под ключ». Возможность отдельного этапа определяется после осмотра объекта и уточнения задачи.',
-  },
-  {
-    question: 'Почему стоимость не указана сразу?',
-    answer:
-      'Цена за квадратный метр остаётся ориентиром, пока не известны исходное состояние, объём демонтажа, инженерия и уровень материалов. Поэтому на сайте не используются неподтверждённые суммы.',
-  },
-  {
-    question: 'Когда согласуются электрика и сантехника?',
-    answer:
-      'Расположение света, розеток, выключателей и сантехнических выводов согласуется до штробления и закрытия черновых слоёв.',
-  },
-  {
-    question: 'Можно ли начать работы без полного плана?',
-    answer:
-      'Подготовительные действия возможны после осмотра, но основные работы безопаснее начинать после согласования планировки, инженерии и последовательности этапов.',
-  },
-]
-
-const WALK_STEPS = [
-  {
-    title: 'Начинаем с несущей логики',
-    text: 'Сначала проверяем, как квартира работает: проходы, зоны, инженерия. Отделка идёт последней.',
-  },
-  {
-    title: 'Свет проектируется заранее',
-    text: 'Сценарии освещения закладываются до штробления. Потом перенести их уже нельзя.',
-  },
-  {
-    title: 'Материалы держат геометрию',
-    text: 'Ровные плоскости, точные стыки и согласованные линии формируют аккуратный результат.',
-  },
 ]
 
 const FOCUSABLE =
@@ -166,6 +21,13 @@ const normalizeText = (value) => value.trim().replace(/\s+/g, ' ')
 
 export default function App({ adminMode = false }) {
   useSiteMotion(adminMode)
+  const cases = useCollection('cases')
+  const services = useCollection('services')
+  const assurances = useCollection('assurances')
+  const walkSteps = useCollection('walkSteps')
+  const processSteps = useCollection('process')
+  const tariffs = useCollection('tariffs')
+  const faq = useCollection('faq')
   const [menuOpen, setMenuOpen] = useState(false)
   const menuButtonRef = useRef(null)
   const mobileNavRef = useRef(null)
@@ -333,39 +195,27 @@ export default function App({ adminMode = false }) {
             </div>
 
             <div className="case-stack">
-              {CASES.map((item) => (
-                <article
-                  key={item.slug}
+              {cases.map((item, index) => (
+                <CollectionItem
+                  as="article"
+                  key={item.id}
+                  collectionId="cases"
+                  itemId={item.id}
+                  index={index}
+                  count={cases.length}
                   className={`case-card${item.wide ? ' case-card-wide' : ''}`}
                   data-reveal="card"
                 >
                   <div className="case-image" data-image-reveal>
-                    <picture>
-                      <source
-                        type="image/webp"
-                        srcSet={`/assets/${item.slug}-800.webp 800w, /assets/${item.slug}-1400.webp 1400w, /assets/${item.slug}.webp ${item.width}w`}
-                        sizes={
-                          item.wide
-                            ? '(max-width: 1120px) 100vw, min(100vw, 1280px)'
-                            : '(max-width: 1120px) 100vw, 50vw'
-                        }
-                      />
-                      <img
-                        src={`/assets/${item.slug}.jpg`}
-                        alt={`${item.title}, ${item.room.toLowerCase()}`}
-                        width={item.width}
-                        height={item.height}
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </picture>
+                    <CaseImage item={item} />
                   </div>
                   <div className="case-meta">
                     <h3>{item.title}</h3>
                     <span>{item.room}</span>
                   </div>
-                </article>
+                </CollectionItem>
               ))}
+              <AddBlockButton collectionId="cases" count={cases.length} />
             </div>
           </div>
         </section>
@@ -378,15 +228,25 @@ export default function App({ adminMode = false }) {
               <h2 data-split>Один проект. Один контур ответственности.</h2>
             </div>
             <div>
-              {SERVICES.map((service) => (
-                <article className="service-row" key={service.n} data-reveal="row">
-                  <b>{service.n}</b>
+              {services.map((service, index) => (
+                <CollectionItem
+                  as="article"
+                  key={service.id}
+                  collectionId="services"
+                  itemId={service.id}
+                  index={index}
+                  count={services.length}
+                  className="service-row"
+                  data-reveal="row"
+                >
+                  <b>{String(index + 1).padStart(2, '0')}</b>
                   <div>
                     <h3>{service.title}</h3>
                     <p>{service.text}</p>
                   </div>
-                </article>
+                </CollectionItem>
               ))}
+              <AddBlockButton collectionId="services" count={services.length} />
             </div>
           </div>
         </section>
@@ -432,12 +292,20 @@ export default function App({ adminMode = false }) {
             </div>
 
             <div className="assurance-grid" data-stagger>
-              {ASSURANCES.map((item) => (
-                <article key={item.title}>
+              {assurances.map((item, index) => (
+                <CollectionItem
+                  as="article"
+                  key={item.id}
+                  collectionId="assurances"
+                  itemId={item.id}
+                  index={index}
+                  count={assurances.length}
+                >
                   <h3>{item.title}</h3>
                   <p>{item.text}</p>
-                </article>
+                </CollectionItem>
               ))}
+              <AddBlockButton collectionId="assurances" count={assurances.length} />
             </div>
           </div>
         </section>
@@ -447,12 +315,21 @@ export default function App({ adminMode = false }) {
           <div className="walk-media" data-walk-media aria-hidden="true" />
           <div className="walk-grade" aria-hidden="true" />
           <div className="page-shell walk-copy">
-            {WALK_STEPS.map((step) => (
-              <div className="walk-step" data-walk-step key={step.title}>
+            {walkSteps.map((step, index) => (
+              <CollectionItem
+                key={step.id}
+                collectionId="walkSteps"
+                itemId={step.id}
+                index={index}
+                count={walkSteps.length}
+                className="walk-step"
+                data-walk-step
+              >
                 <h2>{step.title}</h2>
                 <p>{step.text}</p>
-              </div>
+              </CollectionItem>
             ))}
+            <AddBlockButton collectionId="walkSteps" count={walkSteps.length} />
           </div>
           <div className="walk-progress" data-walk-progress aria-hidden="true">
             <i />
@@ -467,15 +344,24 @@ export default function App({ adminMode = false }) {
               <h2 data-split>Девять этапов от замера до передачи квартиры</h2>
             </div>
             <ol className="process-list">
-              {PROCESS.map((step) => (
-                <li key={step.n} data-reveal="row">
-                  <b>{step.n}</b>
+              {processSteps.map((step, index) => (
+                <CollectionItem
+                  as="li"
+                  key={step.id}
+                  collectionId="process"
+                  itemId={step.id}
+                  index={index}
+                  count={processSteps.length}
+                  data-reveal="row"
+                >
+                  <b>{String(index + 1).padStart(2, '0')}</b>
                   <div>
                     <h3>{step.title}</h3>
                     <p>{step.text}</p>
                   </div>
-                </li>
+                </CollectionItem>
               ))}
+              <AddBlockButton as="li" collectionId="process" count={processSteps.length} />
             </ol>
           </div>
         </section>
@@ -493,8 +379,17 @@ export default function App({ adminMode = false }) {
             </div>
 
             <div className="tariff-grid">
-              {TARIFFS.map((tariff) => (
-                <article className={`tariff ${tariff.className}`} key={tariff.name} data-reveal="card">
+              {tariffs.map((tariff, index) => (
+                <CollectionItem
+                  as="article"
+                  key={tariff.id}
+                  collectionId="tariffs"
+                  itemId={tariff.id}
+                  index={index}
+                  count={tariffs.length}
+                  className={`tariff ${tariffClassName(tariff.style)}`.trim()}
+                  data-reveal="card"
+                >
                   <div className="tariff-head">
                     <h3>{tariff.name}</h3>
                     {tariff.badge ? <span>{tariff.badge}</span> : null}
@@ -505,8 +400,8 @@ export default function App({ adminMode = false }) {
                     <small>после замера и состава работ</small>
                   </div>
                   <ul>
-                    {tariff.items.map((item) => (
-                      <li key={item}>
+                    {tariff.items.map((item, itemIndex) => (
+                      <li key={`${itemIndex}-${item}`}>
                         <Check size={17} />
                         {item}
                       </li>
@@ -516,8 +411,9 @@ export default function App({ adminMode = false }) {
                     Уточнить состав
                     <ArrowRight size={18} />
                   </a>
-                </article>
+                </CollectionItem>
               ))}
+              <AddBlockButton collectionId="tariffs" count={tariffs.length} />
             </div>
           </div>
         </section>
@@ -532,12 +428,21 @@ export default function App({ adminMode = false }) {
               <h2 data-split>Что важно уточнить до начала ремонта</h2>
             </div>
             <div className="faq-list">
-              {FAQ.map((item) => (
-                <details key={item.question} data-reveal="row">
+              {faq.map((item, index) => (
+                <CollectionItem
+                  as="details"
+                  key={item.id}
+                  collectionId="faq"
+                  itemId={item.id}
+                  index={index}
+                  count={faq.length}
+                  data-reveal="row"
+                >
                   <summary>{item.question}</summary>
                   <p>{item.answer}</p>
-                </details>
+                </CollectionItem>
               ))}
+              <AddBlockButton collectionId="faq" count={faq.length} />
             </div>
           </div>
         </section>
@@ -611,6 +516,45 @@ export default function App({ adminMode = false }) {
         </div>
       </footer>
     </>
+  )
+}
+
+function CaseImage({ item }) {
+  const alt = `${item.title}${item.room ? `, ${item.room.toLowerCase()}` : ''}`
+
+  // Uploaded cases render a single image; the built-in ones keep the bundled
+  // responsive webp srcset keyed by slug.
+  if (item.image || !item.slug) {
+    return (
+      <img
+        src={item.image || '/assets/hero-interior.jpg'}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+      />
+    )
+  }
+
+  return (
+    <picture>
+      <source
+        type="image/webp"
+        srcSet={`/assets/${item.slug}-800.webp 800w, /assets/${item.slug}-1400.webp 1400w, /assets/${item.slug}.webp ${item.width}w`}
+        sizes={
+          item.wide
+            ? '(max-width: 1120px) 100vw, min(100vw, 1280px)'
+            : '(max-width: 1120px) 100vw, 50vw'
+        }
+      />
+      <img
+        src={`/assets/${item.slug}.jpg`}
+        alt={alt}
+        width={item.width}
+        height={item.height}
+        loading="lazy"
+        decoding="async"
+      />
+    </picture>
   )
 }
 

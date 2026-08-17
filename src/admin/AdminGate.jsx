@@ -1,33 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import Brand from '../components/Brand.jsx'
+import { BlockEditorProvider, useBlockEditor } from '../content/blockEditor.jsx'
+import { useContent } from '../content/ContentContext.jsx'
 import {
   applyContent,
   applyImage,
   collectImageTargets,
   collectTextTargets,
-  emptyContent,
-  fetchContent,
   imageKey,
   imageKind,
   restoreImage,
   textKey,
 } from './contentRuntime.jsx'
-
-async function api(path, options = {}) {
-  const response = await fetch(path, {
-    credentials: 'same-origin',
-    cache: 'no-store',
-    ...options,
-    headers: {
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(options.method && options.method !== 'GET' ? { 'X-Admin-Request': '1' } : {}),
-      ...options.headers,
-    },
-  })
-  const payload = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(payload.error || `Ошибка ${response.status}`)
-  return payload
-}
+import { api, uploadImageFile } from './api.js'
+import BlockPanel from './BlockPanel.jsx'
 
 export default function AdminGate({ children }) {
   const [state, setState] = useState({ checking: true, authenticated: false, demoCredentials: null, saveEnabled: false })
@@ -56,7 +42,7 @@ export default function AdminGate({ children }) {
   }
 
   return (
-    <>
+    <BlockEditorProvider>
       {children}
       <InlineEditor
         saveEnabled={state.saveEnabled}
@@ -65,7 +51,8 @@ export default function AdminGate({ children }) {
           setState((current) => ({ ...current, checking: false, authenticated: false }))
         }}
       />
-    </>
+      <BlockPanel />
+    </BlockEditorProvider>
   )
 }
 
@@ -105,7 +92,7 @@ function AdminLogin({ demoCredentials, onSuccess }) {
         <div>
           <p className="admin-kicker">Управление сайтом</p>
           <h1>Вход в админ-панель</h1>
-          <p>После входа откроется этот же сайт с редактированием текста и изображений.</p>
+          <p>После входа откроется этот же сайт с редактированием текста, изображений и блоков.</p>
         </div>
         <label>
           Логин
@@ -146,21 +133,30 @@ function AdminLogin({ demoCredentials, onSuccess }) {
 }
 
 function InlineEditor({ onLogout, saveEnabled }) {
-  const [mode, setMode] = useState('text')
+  const editor = useBlockEditor()
+  const { content, dirty, replaceContent, setText, removeText, setImage, removeImage } = useContent()
   const [selected, setSelected] = useState(null)
-  const [dirty, setDirty] = useState(false)
-  const [status, setStatus] = useState('Загрузка содержимого…')
+  const [status, setStatus] = useState(() =>
+    content.updatedAt
+      ? `Сохранено: ${new Date(content.updatedAt).toLocaleString('ru-RU')}`
+      : 'Можно редактировать',
+  )
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef(null)
-  const contentRef = useRef(emptyContent())
-  const modeRef = useRef(mode)
+  const contentRef = useRef(content)
+  const modeRef = useRef(editor.mode)
   const selectedRef = useRef(selected)
   const refreshRef = useRef(() => {})
 
   useEffect(() => {
-    modeRef.current = mode
+    contentRef.current = content
+  }, [content])
+
+  useEffect(() => {
+    modeRef.current = editor.mode
+    setSelected(null)
     refreshRef.current()
-  }, [mode])
+  }, [editor.mode])
 
   useEffect(() => {
     selectedRef.current = selected
@@ -171,22 +167,21 @@ function InlineEditor({ onLogout, saveEnabled }) {
 
   useEffect(() => {
     document.documentElement.classList.add('admin-mode')
-    let disposed = false
     let scheduled = 0
 
     const register = () => {
       scheduled = 0
-      const textMode = modeRef.current === 'text'
+      const mode = modeRef.current
       collectTextTargets().forEach((element) => {
         if (!element.dataset.adminOriginalText) element.dataset.adminOriginalText = element.textContent || ''
         element.dataset.adminTextKey = textKey(element)
-        element.classList.toggle('admin-text-target', textMode)
-        if (textMode) element.setAttribute('contenteditable', 'plaintext-only')
+        element.classList.toggle('admin-text-target', mode === 'text')
+        if (mode === 'text') element.setAttribute('contenteditable', 'plaintext-only')
         else element.removeAttribute('contenteditable')
       })
       collectImageTargets().forEach((element) => {
         element.dataset.adminImageKey = imageKey(element)
-        element.classList.toggle('admin-image-target', !textMode)
+        element.classList.toggle('admin-image-target', mode === 'image')
       })
       applyContent(contentRef.current, { admin: true })
     }
@@ -200,24 +195,12 @@ function InlineEditor({ onLogout, saveEnabled }) {
       if (!element.dataset.adminOriginalText) element.dataset.adminOriginalText = element.textContent || ''
     })
     collectImageTargets().forEach((element) => restoreImage(element))
-
-    fetchContent()
-      .then((content) => {
-        if (disposed) return
-        contentRef.current = content
-        register()
-        setStatus(content.updatedAt ? `Сохранено: ${new Date(content.updatedAt).toLocaleString('ru-RU')}` : 'Можно редактировать')
-      })
-      .catch((error) => !disposed && setStatus(error.message))
+    register()
 
     const onInput = (event) => {
       const element = event.target.closest?.('[data-admin-text-key]')
       if (!element || modeRef.current !== 'text') return
-      contentRef.current = {
-        ...contentRef.current,
-        texts: { ...contentRef.current.texts, [element.dataset.adminTextKey]: element.innerText },
-      }
-      setDirty(true)
+      setText(element.dataset.adminTextKey, element.innerText)
       setStatus('Есть несохранённые изменения')
     }
 
@@ -232,11 +215,13 @@ function InlineEditor({ onLogout, saveEnabled }) {
         setSelected({ type: 'text', key: element.dataset.adminTextKey, element })
         return
       }
-      const element = event.target.closest?.('[data-admin-image-key]')
-      if (!element) return
-      event.preventDefault()
-      event.stopPropagation()
-      setSelected({ type: 'image', key: element.dataset.adminImageKey, element })
+      if (modeRef.current === 'image') {
+        const element = event.target.closest?.('[data-admin-image-key]')
+        if (!element) return
+        event.preventDefault()
+        event.stopPropagation()
+        setSelected({ type: 'image', key: element.dataset.adminImageKey, element })
+      }
     }
 
     const onKeyDown = (event) => {
@@ -257,7 +242,6 @@ function InlineEditor({ onLogout, saveEnabled }) {
     observer.observe(document.getElementById('root'), { childList: true, subtree: true })
 
     return () => {
-      disposed = true
       document.documentElement.classList.remove('admin-mode')
       document.removeEventListener('input', onInput, true)
       document.removeEventListener('click', onClick, true)
@@ -279,15 +263,9 @@ function InlineEditor({ onLogout, saveEnabled }) {
   const updateImage = (entry) => {
     const target = selectedRef.current
     if (!target || target.type !== 'image' || !target.element?.isConnected) return
-    contentRef.current = {
-      ...contentRef.current,
-      images: {
-        ...contentRef.current.images,
-        [target.key]: { ...contentRef.current.images[target.key], kind: imageKind(target.element), ...entry },
-      },
-    }
-    applyImage(target.element, contentRef.current.images[target.key], { admin: true })
-    setDirty(true)
+    const next = { ...contentRef.current.images[target.key], kind: imageKind(target.element), ...entry }
+    setImage(target.key, next)
+    applyImage(target.element, next, { admin: true })
     setStatus('Есть несохранённые изменения')
   }
 
@@ -299,17 +277,8 @@ function InlineEditor({ onLogout, saveEnabled }) {
     }
     setStatus('Загружаем изображение…')
     try {
-      const data = await new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result)
-        reader.onerror = () => reject(new Error('Не удалось прочитать файл.'))
-        reader.readAsDataURL(file)
-      })
-      const result = await api('/api/admin/upload', {
-        method: 'POST',
-        body: JSON.stringify({ data }),
-      })
-      updateImage({ url: result.url, removed: false })
+      const url = await uploadImageFile(file)
+      updateImage({ url, removed: false })
       setStatus('Изображение заменено. Нажмите «Сохранить всё».')
     } catch (error) {
       setStatus(error.message)
@@ -323,16 +292,11 @@ function InlineEditor({ onLogout, saveEnabled }) {
     if (!target?.element?.isConnected) return
     if (target.type === 'text') {
       target.element.textContent = target.element.dataset.adminOriginalText || ''
-      const texts = { ...contentRef.current.texts }
-      delete texts[target.key]
-      contentRef.current = { ...contentRef.current, texts }
+      removeText(target.key)
     } else {
       restoreImage(target.element)
-      const images = { ...contentRef.current.images }
-      delete images[target.key]
-      contentRef.current = { ...contentRef.current, images }
+      removeImage(target.key)
     }
-    setDirty(true)
     setStatus('Исходное значение восстановлено. Нажмите «Сохранить всё».')
     refreshRef.current()
   }
@@ -341,11 +305,7 @@ function InlineEditor({ onLogout, saveEnabled }) {
     const target = selectedRef.current
     if (target?.type !== 'text' || !target.element?.isConnected) return
     target.element.textContent = ''
-    contentRef.current = {
-      ...contentRef.current,
-      texts: { ...contentRef.current.texts, [target.key]: '' },
-    }
-    setDirty(true)
+    setText(target.key, '')
     setStatus('Текст очищен. Нажмите «Сохранить всё».')
   }
 
@@ -361,8 +321,7 @@ function InlineEditor({ onLogout, saveEnabled }) {
         method: 'PUT',
         body: JSON.stringify(contentRef.current),
       })
-      contentRef.current = saved
-      setDirty(false)
+      replaceContent(saved)
       setStatus(`Сохранено: ${new Date(saved.updatedAt).toLocaleString('ru-RU')}`)
     } catch (error) {
       setStatus(error.message)
@@ -380,11 +339,14 @@ function InlineEditor({ onLogout, saveEnabled }) {
         <span>{selectedLabel}</span>
       </div>
       <div className="admin-mode-switch" aria-label="Режим редактирования">
-        <button type="button" className={mode === 'text' ? 'active' : ''} onClick={() => { setMode('text'); setSelected(null) }}>
+        <button type="button" className={editor.mode === 'text' ? 'active' : ''} onClick={() => editor.selectMode('text')}>
           Текст
         </button>
-        <button type="button" className={mode === 'image' ? 'active' : ''} onClick={() => { setMode('image'); setSelected(null) }}>
+        <button type="button" className={editor.mode === 'image' ? 'active' : ''} onClick={() => editor.selectMode('image')}>
           Изображения
+        </button>
+        <button type="button" className={editor.mode === 'blocks' ? 'active' : ''} onClick={() => editor.selectMode('blocks')}>
+          Блоки
         </button>
       </div>
       {selected?.type === 'text' ? (

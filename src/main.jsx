@@ -2,7 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import AdminGate from './admin/AdminGate.jsx'
-import { PublicContentRuntime } from './admin/contentRuntime.jsx'
+import { PublicContentRuntime, fetchContent } from './admin/contentRuntime.jsx'
+import { ContentProvider } from './content/ContentContext.jsx'
+import { emptyContent } from './content/model.js'
 import 'lenis/dist/lenis.css'
 import './styles.css'
 
@@ -34,17 +36,27 @@ window.addEventListener('popstate', scrollToHash)
 
 const isAdminRoute = window.location.pathname.replace(/\/+$/, '') === '/admin'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    {isAdminRoute ? (
-      <AdminGate>
-        <App adminMode />
-      </AdminGate>
-    ) : (
-      <>
-        <App />
-        <PublicContentRuntime />
-      </>
-    )}
-  </StrictMode>,
-)
+// Load saved content before the first render so collections and GSAP triggers
+// see the final block list immediately (no default-content flash).
+const bootstrap = async () => {
+  const initialContent = await fetchContent().catch(() => emptyContent())
+
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <ContentProvider initialContent={initialContent}>
+        {isAdminRoute ? (
+          <AdminGate>
+            <App adminMode />
+          </AdminGate>
+        ) : (
+          <>
+            <App />
+            <PublicContentRuntime />
+          </>
+        )}
+      </ContentProvider>
+    </StrictMode>,
+  )
+}
+
+void bootstrap()
