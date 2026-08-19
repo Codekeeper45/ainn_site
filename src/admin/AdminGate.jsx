@@ -298,7 +298,6 @@ function InlineEditor({ onLogout, saveEnabled }) {
       removeImage(target.key)
     }
     setStatus('Исходное значение восстановлено. Нажмите «Сохранить всё».')
-    refreshRef.current()
   }
 
   const clearSelectedText = () => {
