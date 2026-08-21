@@ -14,7 +14,7 @@ React 19, Three.js, Vite, GSAP, Lenis. Node server.
 
 * `ainn-site.service` — порт 4175, `ADMIN_SAVE_ENABLED=true`
 * `ainn-tunnel.service` — Cloudflare HTTPS туннель (URL меняется при рестарте, смотри `journalctl --user -u ainn-tunnel`)
-* Админка: `/admin` (login: `admin`, pass: `stalkom-demo-2026`)
+* Админка: `/admin`; учётные данные `ADMIN_USER`/`ADMIN_PASSWORD` хранятся только в защищённом `~/.config/ainn-site.env` (не в Git).
 * Ветка: `feat/admin-inline-editor`
 
 ## Инварианты

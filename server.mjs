@@ -17,11 +17,13 @@ const port = Number(process.env.PORT || 4175)
 // persist changes. Set ADMIN_SAVE_ENABLED=true when the owner is ready to save.
 const adminEnabled = process.env.ADMIN_ENABLED !== 'false'
 const adminSaveEnabled = process.env.ADMIN_SAVE_ENABLED === 'true'
-const adminUser = process.env.ADMIN_USER || 'admin'
-const adminPassword = process.env.ADMIN_PASSWORD || 'stalkom-demo-2026'
-const demoCredentials = process.env.ADMIN_USER || process.env.ADMIN_PASSWORD
-  ? null
-  : { username: adminUser, password: adminPassword }
+const adminUser = String(process.env.ADMIN_USER || '').trim()
+const adminPassword = String(process.env.ADMIN_PASSWORD || '')
+if (adminEnabled && (!adminUser || !adminPassword)) {
+  throw new Error('ADMIN_USER and ADMIN_PASSWORD are required when ADMIN_ENABLED=true')
+}
+// Never expose credentials to the browser, even for a demo deployment.
+const demoCredentials = null
 const sessionHours = 8
 const sessions = new Map()
 const loginAttempts = new Map()
