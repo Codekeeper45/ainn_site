@@ -251,6 +251,13 @@ export function useSiteMotion(disabled = false) {
             void (async () => {
               let candidate = null
               try {
+                // If custom cover photo was set on .hero-fallback, do not overlay the hardcoded 3D render
+                const fallbackEl = stage.querySelector('.hero-fallback')
+                const customBg = fallbackEl?.style?.backgroundImage || ''
+                if (customBg && !customBg.includes('interior-1920.webp')) {
+                  stage.classList.remove('is-live')
+                  return
+                }
                 const module = await import('./scene/InteriorScene.js')
                 if (cancelled || disposed || stage.isConnected === false) return
 

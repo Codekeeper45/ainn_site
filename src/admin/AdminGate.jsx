@@ -134,7 +134,7 @@ function AdminLogin({ demoCredentials, onSuccess }) {
 
 function InlineEditor({ onLogout, saveEnabled }) {
   const editor = useBlockEditor()
-  const { content, dirty, replaceContent, setText, removeText, setImage, removeImage } = useContent()
+  const { content, dirty, replaceContent, setText, removeText, setImage, removeImage, updateItem } = useContent()
   const [selected, setSelected] = useState(null)
   const [status, setStatus] = useState(() =>
     content.updatedAt
@@ -208,19 +208,59 @@ function InlineEditor({ onLogout, saveEnabled }) {
       if (event.target.closest?.('[data-admin-ui]')) return
       if (modeRef.current === 'text') {
         const element = event.target.closest?.('[data-admin-text-key]')
-        if (!element) return
-        event.preventDefault()
-        event.stopPropagation()
-        element.focus()
-        setSelected({ type: 'text', key: element.dataset.adminTextKey, element })
-        return
+        if (element) {
+          event.preventDefault()
+          event.stopPropagation()
+          element.focus()
+          setSelected({ type: 'text', key: element.dataset.adminTextKey, element })
+          return
+        }
+        // If clicked on any block / collection item (tariff, service, case, process, walk step)
+        const collectionEl = event.target.closest?.('[data-collection-item]')
+        if (collectionEl?.dataset?.collectionId && collectionEl?.dataset?.itemId) {
+          event.preventDefault()
+          event.stopPropagation()
+          editor.openEditor(collectionEl.dataset.collectionId, collectionEl.dataset.itemId)
+          return
+        }
       }
       if (modeRef.current === 'image') {
-        const element = event.target.closest?.('[data-admin-image-key]')
+        // If clicked on a case card / case image
+        const collectionEl = event.target.closest?.('[data-collection-item]')
+        if (collectionEl?.dataset?.collectionId === 'cases' && collectionEl?.dataset?.itemId) {
+          event.preventDefault()
+          event.stopPropagation()
+          setSelected({
+            type: 'collection-image',
+            collectionId: 'cases',
+            itemId: collectionEl.dataset.itemId,
+            element: collectionEl.querySelector('.case-image') || collectionEl,
+          })
+          return
+        }
+
+        let element = event.target.closest?.('[data-admin-image-key]')
+        // If clicked on hero banner
+        if (!element && event.target.closest?.('.hero-shell')) {
+          element = document.querySelector('.hero-fallback[data-admin-image-key]')
+        }
+        // If clicked on walk scene
+        if (!element && event.target.closest?.('.walk-scene')) {
+          element = document.querySelector('.walk-media[data-admin-image-key]')
+        }
         if (!element) return
         event.preventDefault()
         event.stopPropagation()
         setSelected({ type: 'image', key: element.dataset.adminImageKey, element })
+        return
+      }
+      if (modeRef.current === 'blocks') {
+        const collectionEl = event.target.closest?.('[data-collection-item]')
+        if (collectionEl?.dataset?.collectionId && collectionEl?.dataset?.itemId) {
+          event.preventDefault()
+          event.stopPropagation()
+          editor.openEditor(collectionEl.dataset.collectionId, collectionEl.dataset.itemId)
+        }
       }
     }
 
@@ -278,12 +318,26 @@ function InlineEditor({ onLogout, saveEnabled }) {
     setStatus('Загружаем изображение…')
     try {
       const url = await uploadImageFile(file)
-      updateImage({ url, removed: false })
-      setStatus('Изображение заменено. Нажмите «Сохранить всё».')
+      const target = selectedRef.current
+      if (target?.type === 'collection-image') {
+        updateItem(target.collectionId, target.itemId, { image: url })
+        setStatus('Фото кейса заменено. Нажмите «Сохранить всё».')
+      } else {
+        updateImage({ url, removed: false })
+        setStatus('Изображение заменено. Нажмите «Сохранить всё».')
+      }
     } catch (error) {
       setStatus(error.message)
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const removeCollectionImage = () => {
+    const target = selectedRef.current
+    if (target?.type === 'collection-image') {
+      updateItem(target.collectionId, target.itemId, { image: '' })
+      setStatus('Фото убрано. Нажмите «Сохранить всё».')
     }
   }
 
@@ -293,7 +347,7 @@ function InlineEditor({ onLogout, saveEnabled }) {
     if (target.type === 'text') {
       target.element.textContent = target.element.dataset.adminOriginalText || ''
       removeText(target.key)
-    } else {
+    } else if (target.type === 'image') {
       restoreImage(target.element)
       removeImage(target.key)
     }
@@ -329,7 +383,18 @@ function InlineEditor({ onLogout, saveEnabled }) {
     }
   }
 
-  const selectedLabel = selected?.type === 'text' ? 'Выбран текст' : selected?.type === 'image' ? 'Выбрано изображение' : 'Выберите элемент на странице'
+  const selectedLabel =
+    selected?.type === 'text'
+      ? 'Выбран текст'
+      : selected?.type === 'collection-image'
+        ? 'Выбрано фото кейса'
+        : selected?.type === 'image'
+          ? (selected.element?.classList.contains('hero-fallback')
+              ? 'Выбрана обложка (первый экран)'
+              : selected.element?.classList.contains('walk-media')
+                ? 'Выбран фон скролл-сцены'
+                : 'Выбрано изображение')
+          : 'Нажмите на любой элемент на странице'
 
   return (
     <aside className="admin-toolbar" data-admin-ui aria-label="Инструменты редактирования">
@@ -354,11 +419,24 @@ function InlineEditor({ onLogout, saveEnabled }) {
           <button type="button" onClick={restoreSelected}>Вернуть</button>
         </div>
       ) : null}
-      {selected?.type === 'image' ? (
+      {selected?.type === 'image' || selected?.type === 'collection-image' ? (
         <div className="admin-selection-actions">
-          <button type="button" onClick={() => fileInputRef.current?.click()}>Заменить</button>
-          <button type="button" className="danger" onClick={() => updateImage({ removed: true })}>Удалить</button>
-          <button type="button" onClick={restoreSelected}>Вернуть</button>
+          <button type="button" onClick={() => fileInputRef.current?.click()}>
+            Заменить фото
+          </button>
+          <button
+            type="button"
+            className="danger"
+            onClick={() => {
+              if (selected.type === 'collection-image') removeCollectionImage()
+              else updateImage({ removed: true })
+            }}
+          >
+            Удалить
+          </button>
+          {selected.type === 'image' ? (
+            <button type="button" onClick={restoreSelected}>Вернуть</button>
+          ) : null}
         </div>
       ) : null}
       <input

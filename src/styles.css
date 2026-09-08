@@ -1566,6 +1566,67 @@ textarea {
   padding-bottom: 112px;
 }
 
+/* Allow clicking hero & walk backgrounds in admin mode without veil/overlay interception */
+.admin-mode .hero-veil,
+.admin-mode .walk-grade {
+  pointer-events: none !important;
+}
+
+.admin-mode .hero-stage,
+.admin-mode .hero-fallback {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.admin-mode .hero-content {
+  pointer-events: none;
+}
+
+.admin-mode .hero-content > * {
+  pointer-events: auto;
+}
+
+.admin-mode .walk-media {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure walk-scene steps do not stack on top of each other on desktop in admin mode */
+.admin-mode .walk-scene {
+  height: auto !important;
+  min-height: 100svh !important;
+  overflow: visible !important;
+  padding-block: clamp(60px, 12vh, 120px) !important;
+}
+
+.admin-mode .walk-copy {
+  position: relative !important;
+  inset: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+  min-height: auto !important;
+  padding-block: 40px !important;
+  max-width: min(640px, 100%) !important;
+}
+
+.admin-mode .walk-step {
+  grid-area: auto !important;
+  max-width: 100% !important;
+  padding: 24px 28px !important;
+  background: rgb(14 14 14 / 92%) !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: var(--radius) !important;
+  backdrop-filter: blur(12px) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+.admin-mode .walk-progress {
+  display: none !important;
+}
+
 .admin-toolbar {
   position: fixed;
   right: 16px;

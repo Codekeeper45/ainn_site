@@ -34,7 +34,13 @@ export function CollectionItem({
   }
 
   return (
-    <Tag className={classes} data-collection-item="" {...rest}>
+    <Tag
+      className={classes}
+      data-collection-item=""
+      data-collection-id={collectionId}
+      data-item-id={itemId}
+      {...rest}
+    >
       {children}
       {blockMode ? (
         <div className="admin-block-controls" data-admin-ui>

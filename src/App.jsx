@@ -89,10 +89,10 @@ export default function App({ adminMode = false }) {
 
       <header className="site-header">
         <a
-          className="brand-link"
+          className="brand"
           href="#top"
-          aria-label="Стальком Продукт — на главную"
-          onClick={() => closeMenu()}
+          aria-label="REMONT 360° — на главную"
+          onClick={() => setMenuOpen(false)}
         >
           <Brand />
         </a>
@@ -257,7 +257,7 @@ export default function App({ adminMode = false }) {
             <div className="about-layout">
               <div className="about-copy" data-reveal>
                 <p className="eyebrow">О компании</p>
-                <h2 data-split>Стальком Продукт собирает интерьер как точную конструкцию</h2>
+                <h2 data-split>REMONT 360° собирает интерьер как точную конструкцию</h2>
                 <p>
                   Мы ведём ремонт по порядку: сначала планировка и инженерия, затем черновые слои и
                   только потом отделка. Такой порядок убирает переделки.
@@ -526,7 +526,7 @@ export default function App({ adminMode = false }) {
 
       <footer className="site-footer">
         <div className="page-shell footer-inner">
-          <a href="#top" aria-label="Стальком Продукт — наверх">
+          <a href="#top" aria-label="REMONT 360° — наверх">
             <Brand />
           </a>
           <div className="footer-contacts">
@@ -536,7 +536,7 @@ export default function App({ adminMode = false }) {
             <span className="footer-divider">·</span>
             <a href="https://wa.me/77066606362" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </div>
-          <p>© {new Date().getFullYear()} Стальком Продукт · Ремонт квартир в Алматы</p>
+          <p>© {new Date().getFullYear()} REMONT 360° · Ремонт квартир в Алматы</p>
         </div>
       </footer>
     </>
