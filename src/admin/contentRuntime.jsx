@@ -53,6 +53,21 @@ function elementPath(element) {
 }
 
 export function textKey(element) {
+  const collectionItem = element.closest('[data-collection-item]')
+  if (collectionItem?.dataset?.collectionId && collectionItem?.dataset?.itemId) {
+    const collectionId = collectionItem.dataset.collectionId
+    const itemId = collectionItem.dataset.itemId
+    const subParts = []
+    let current = element
+    while (current && current !== collectionItem) {
+      const parent = current.parentElement
+      if (!parent) break
+      const siblings = Array.from(parent.children).filter((s) => s.tagName === current.tagName)
+      subParts.unshift(`${current.tagName.toLowerCase()}:${siblings.indexOf(current) + 1}`)
+      current = parent
+    }
+    return `text:col:${collectionId}:${itemId}/${subParts.join('/')}`
+  }
   return `text:${elementPath(element)}`
 }
 
@@ -62,16 +77,13 @@ export function imageKey(element) {
 
 function hasEditableText(element) {
   if (element.closest('[data-admin-ui]')) return false
-  if (element.matches('[data-split]')) return Boolean(element.textContent?.trim())
-  if (element.closest('.brief-summary, .form-status, .field-error, output')) return false
-  // Exclude buttons in collections that are controls
   if (element.closest('.admin-block-controls')) return false
-  // Allow text editing on leaf text elements
-  if (element.children.length > 0) {
-    // If element has only SVG icon or simple formatting, check if it has text nodes
-    const textNodes = Array.from(element.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim())
-    if (textNodes.length === 0) return false
-  }
+  if (element.closest('.brief-summary, .form-status, .field-error, output')) return false
+  // Leaf text elements only — containers with child elements (e.g. SVG icons or nested spans)
+  // should not be edited directly so SVG icons are never wiped out.
+  if (element.children.length > 0) return false
+  if (element.matches('[data-split]')) return true
+  if (element.dataset.adminOriginalText !== undefined) return true
   return Boolean(element.textContent?.trim())
 }
 
@@ -158,14 +170,28 @@ export function applyImage(element, entry, { admin = false } = {}) {
     })
   } else {
     element.style.backgroundImage = `url("${entry.url.replaceAll('"', '')}")`
+    if (element.classList.contains('hero-fallback')) {
+      element.setAttribute('data-admin-custom-image', 'true')
+      const stage = element.closest('.hero-stage')
+      if (stage) {
+        stage.classList.remove('is-live')
+        stage.querySelectorAll('canvas').forEach((c) => {
+          c.style.display = 'none'
+        })
+      }
+    }
   }
 }
 
 export function applyContent(content, options = {}) {
   const safeContent = content || {}
   collectTextTargets().forEach((element) => {
-    const value = safeContent.texts?.[textKey(element)]
-    if (typeof value === 'string' && element.textContent !== value) element.textContent = value
+    const primaryKey = textKey(element)
+    const legacyKey = `text:${elementPath(element)}`
+    const value = safeContent.texts?.[primaryKey] ?? safeContent.texts?.[legacyKey]
+    if (typeof value === 'string' && element.textContent !== value) {
+      element.textContent = value
+    }
   })
   collectImageTargets().forEach((element) => {
     const entry = safeContent.images?.[imageKey(element)]

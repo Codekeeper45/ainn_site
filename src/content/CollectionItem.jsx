@@ -15,11 +15,13 @@ export function CollectionItem({
   index,
   count,
   className,
+  isWide,
+  tariffStyle,
   children,
   ...rest
 }) {
   const editor = useBlockEditor()
-  const { removeItem, moveItem } = useContent()
+  const { removeItem, moveItem, updateItem } = useContent()
   const blockMode = Boolean(editor) && editor.mode === 'blocks'
   const collection = COLLECTIONS[collectionId]
 
@@ -28,7 +30,6 @@ export function CollectionItem({
   const remove = () => {
     const name = collection.singular.toLowerCase()
     if (window.confirm(`Удалить ${name}? Это действие нельзя отменить.`)) {
-      if (editor?.editing?.itemId === itemId) editor.closeEditor()
       removeItem(collectionId, itemId)
     }
   }
@@ -44,14 +45,6 @@ export function CollectionItem({
       {children}
       {blockMode ? (
         <div className="admin-block-controls" data-admin-ui>
-          <button
-            type="button"
-            title="Редактировать"
-            aria-label={`Редактировать: ${collection.singular.toLowerCase()}`}
-            onClick={() => editor.openEditor(collectionId, itemId)}
-          >
-            ✎
-          </button>
           <button
             type="button"
             title="Переместить выше"
@@ -70,6 +63,31 @@ export function CollectionItem({
           >
             ↓
           </button>
+          {collectionId === 'cases' ? (
+            <button
+              type="button"
+              title={isWide ? 'Сделать обычной' : 'Сделать широкой'}
+              aria-label={isWide ? 'Сделать обычной' : 'Сделать широкой'}
+              onClick={() => updateItem(collectionId, itemId, { wide: !isWide })}
+            >
+              ↔
+            </button>
+          ) : null}
+          {collectionId === 'tariffs' ? (
+            <button
+              type="button"
+              title="Переключить стиль (обычный / акцентный / премиум)"
+              aria-label="Переключить стиль"
+              onClick={() => {
+                const cur = tariffStyle || ''
+                const next = cur === '' ? 'featured' : cur === 'featured' ? 'premium' : ''
+                const badge = next === 'featured' ? 'Оптимальный баланс' : ''
+                updateItem(collectionId, itemId, { style: next, badge })
+              }}
+            >
+              ★
+            </button>
+          ) : null}
           <button
             type="button"
             className="danger"
@@ -97,8 +115,7 @@ export function AddBlockButton({ collectionId, count, as: Tag = 'div', className
 
   const add = () => {
     const item = blankItem(collectionId)
-    addItem(collectionId, item)
-    editor.openEditor(collectionId, item.id)
+    if (item) addItem(collectionId, item)
   }
 
   return (

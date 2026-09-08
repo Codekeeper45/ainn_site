@@ -13,7 +13,6 @@ import {
   textKey,
 } from './contentRuntime.jsx'
 import { api, uploadImageFile } from './api.js'
-import BlockPanel from './BlockPanel.jsx'
 
 export default function AdminGate({ children }) {
   const [state, setState] = useState({ checking: true, authenticated: false, demoCredentials: null, saveEnabled: false })
@@ -37,7 +36,12 @@ export default function AdminGate({ children }) {
   if (!state.authenticated) {
     return <AdminLogin
       demoCredentials={state.demoCredentials}
-      onSuccess={() => setState((current) => ({ ...current, checking: false, authenticated: true }))}
+      onSuccess={(res) => setState((current) => ({
+        ...current,
+        checking: false,
+        authenticated: true,
+        saveEnabled: res?.saveEnabled === true || current.saveEnabled,
+      }))}
     />
   }
 
@@ -51,7 +55,6 @@ export default function AdminGate({ children }) {
           setState((current) => ({ ...current, checking: false, authenticated: false }))
         }}
       />
-      <BlockPanel />
     </BlockEditorProvider>
   )
 }
@@ -75,11 +78,11 @@ function AdminLogin({ demoCredentials, onSuccess }) {
     event.preventDefault()
     setStatus({ loading: true, error: '' })
     try {
-      await api('/api/admin/login', {
+      const res = await api('/api/admin/login', {
         method: 'POST',
         body: JSON.stringify(values),
       })
-      onSuccess()
+      onSuccess(res)
     } catch (error) {
       setStatus({ loading: false, error: error.message })
     }
@@ -246,14 +249,6 @@ function InlineEditor({ onLogout, saveEnabled }) {
         setSelected({ type: 'image', key: element.dataset.adminImageKey, element })
         return
       }
-      if (modeRef.current === 'blocks') {
-        const collectionEl = event.target.closest?.('[data-collection-item]')
-        if (collectionEl?.dataset?.collectionId && collectionEl?.dataset?.itemId) {
-          event.preventDefault()
-          event.stopPropagation()
-          editor.openEditor(collectionEl.dataset.collectionId, collectionEl.dataset.itemId)
-        }
-      }
     }
 
     const onKeyDown = (event) => {
@@ -358,6 +353,12 @@ function InlineEditor({ onLogout, saveEnabled }) {
     if (!saveEnabled) {
       setStatus('Сохранение временно отключено. Изменения видны только до обновления страницы.')
       return
+    }
+    // Commit any currently focused text element
+    if (document.activeElement?.hasAttribute?.('data-admin-text-key')) {
+      const el = document.activeElement
+      setText(el.dataset.adminTextKey, el.innerText)
+      el.blur()
     }
     setSaving(true)
     setStatus('Сохраняем изменения…')

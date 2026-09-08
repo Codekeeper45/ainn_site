@@ -89,10 +89,10 @@ export default function App({ adminMode = false }) {
 
       <header className="site-header">
         <a
-          className="brand"
+          className="brand-link"
           href="#top"
           aria-label="REMONT 360° — на главную"
-          onClick={() => setMenuOpen(false)}
+          onClick={() => closeMenu()}
         >
           <Brand />
         </a>
@@ -104,7 +104,7 @@ export default function App({ adminMode = false }) {
             </a>
           ))}
           <a className="nav-cta" href="#calculator">
-            Рассчитать
+            <span>Рассчитать</span>
             <ArrowRight size={16} />
           </a>
         </nav>
@@ -161,11 +161,11 @@ export default function App({ adminMode = false }) {
               </p>
               <div className="hero-actions">
                 <a className="button button-primary" href="#calculator">
-                  Рассчитать стоимость
+                  <span>Рассчитать стоимость</span>
                   <ArrowRight size={19} />
                 </a>
                 <a className="button" href="#cases">
-                  Смотреть кейсы
+                  <span>Смотреть кейсы</span>
                   <ArrowRight size={19} />
                 </a>
               </div>
@@ -203,6 +203,7 @@ export default function App({ adminMode = false }) {
                   itemId={item.id}
                   index={index}
                   count={cases.length}
+                  isWide={Boolean(item.wide)}
                   className={`case-card${item.wide ? ' case-card-wide' : ''}`}
                   data-reveal="card"
                 >
@@ -267,7 +268,7 @@ export default function App({ adminMode = false }) {
                   ходу ремонта меняется задача, новый объём сначала согласуется отдельно.
                 </p>
                 <a className="about-link" href="#process">
-                  Как строится работа
+                  <span>Как строится работа</span>
                   <ArrowRight size={18} />
                 </a>
               </div>
@@ -387,6 +388,7 @@ export default function App({ adminMode = false }) {
                   itemId={tariff.id}
                   index={index}
                   count={tariffs.length}
+                  tariffStyle={tariff.style}
                   className={`tariff ${tariffClassName(tariff.style)}`.trim()}
                   data-reveal="card"
                 >
@@ -403,12 +405,12 @@ export default function App({ adminMode = false }) {
                     {tariff.items.map((item, itemIndex) => (
                       <li key={`${itemIndex}-${item}`}>
                         <Check size={17} />
-                        {item}
+                        <span>{item}</span>
                       </li>
                     ))}
                   </ul>
                   <a className="button tariff-button" href="#calculator">
-                    Уточнить состав
+                    <span>Уточнить состав</span>
                     <ArrowRight size={18} />
                   </a>
                 </CollectionItem>
@@ -484,7 +486,7 @@ export default function App({ adminMode = false }) {
           <div className="page-shell final-content" data-reveal>
             <h2 data-split>Начнём с вашей квартиры.</h2>
             <a className="button button-primary" href="#contacts">
-              Обсудить проект
+              <span>Обсудить проект</span>
               <ArrowRight size={19} />
             </a>
           </div>
@@ -664,7 +666,7 @@ function ReviewForm() {
         {errors.review ? <p className="field-error" id="review-text-error">{errors.review}</p> : null}
       </div>
       <button className="button button-primary" type="submit">
-        Проверить отзыв
+        <span>Проверить отзыв</span>
         <ArrowRight size={18} />
       </button>
       {status ? (
@@ -759,7 +761,7 @@ function ContactForm() {
         {errors.phone ? <p className="field-error" id="contact-phone-error">{errors.phone}</p> : null}
       </div>
       <button className="button button-primary" type="submit">
-        Отправить заявку
+        <span>Отправить заявку</span>
         <ArrowRight size={18} />
       </button>
       {status ? (

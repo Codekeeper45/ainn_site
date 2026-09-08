@@ -214,7 +214,7 @@ export const COLLECTIONS = {
       { name: 'image', label: 'Фото кейса', type: 'image' },
       { name: 'wide', label: 'Широкая карточка (на всю ширину ряда)', type: 'boolean' },
     ],
-    blank: () => ({ title: 'Новый кейс', room: '', image: '', wide: false }),
+    blank: () => ({ title: 'Новый проект', room: 'Интерьер', image: '', wide: false }),
     defaults: DEFAULT_CASES,
   },
   services: {
@@ -223,7 +223,7 @@ export const COLLECTIONS = {
     addLabel: 'Добавить услугу',
     maxItems: 12,
     fields: titleAndTextFields,
-    blank: () => ({ title: '', text: '' }),
+    blank: () => ({ title: 'Новая услуга', text: 'Описание новой услуги и состава работ.' }),
     defaults: DEFAULT_SERVICES,
   },
   assurances: {
@@ -232,7 +232,7 @@ export const COLLECTIONS = {
     addLabel: 'Добавить гарантию',
     maxItems: 9,
     fields: titleAndTextFields,
-    blank: () => ({ title: '', text: '' }),
+    blank: () => ({ title: 'Новая гарантия', text: 'Описание стандартов качества и гарантий.' }),
     defaults: DEFAULT_ASSURANCES,
   },
   walkSteps: {
@@ -241,7 +241,7 @@ export const COLLECTIONS = {
     addLabel: 'Добавить шаг',
     maxItems: 8,
     fields: titleAndTextFields,
-    blank: () => ({ title: '', text: '' }),
+    blank: () => ({ title: 'Новый этап', text: 'Описание этапа ремонтных работ.' }),
     defaults: DEFAULT_WALK_STEPS,
   },
   process: {
@@ -250,7 +250,7 @@ export const COLLECTIONS = {
     addLabel: 'Добавить этап',
     maxItems: 16,
     fields: titleAndTextFields,
-    blank: () => ({ title: '', text: '' }),
+    blank: () => ({ title: 'Новый шаг', text: 'Описание шага от замера до сдачи.' }),
     defaults: DEFAULT_PROCESS,
   },
   tariffs: {
@@ -280,7 +280,13 @@ export const COLLECTIONS = {
         itemMaxLength: 160,
       },
     ],
-    blank: () => ({ name: '', text: '', style: '', badge: '', items: [] }),
+    blank: () => ({
+      name: 'Новый тариф',
+      text: 'Описание условий и состава ремонта по тарифу.',
+      style: '',
+      badge: '',
+      items: ['Работы включены', 'Материалы включены', 'Состав фиксируется в смете'],
+    }),
     defaults: DEFAULT_TARIFFS,
   },
   faq: {
@@ -292,7 +298,7 @@ export const COLLECTIONS = {
       { name: 'question', label: 'Вопрос', type: 'text', maxLength: 200, required: true },
       { name: 'answer', label: 'Ответ', type: 'textarea', maxLength: 1000 },
     ],
-    blank: () => ({ question: '', answer: '' }),
+    blank: () => ({ question: 'Новый вопрос', answer: 'Подробный ответ на вопрос заказчика.' }),
     defaults: DEFAULT_FAQ,
   },
 }
