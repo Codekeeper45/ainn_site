@@ -10,9 +10,9 @@ export default function Brand() {
     <img
       className="brand-logo"
       src="/assets/skp-logo-full.webp"
-      alt="Стальком Продукт — дизайн и ремонт"
-      width={680}
-      height={248}
+      alt="REMONT 360° — дизайн и ремонт"
+      width={531}
+      height={386}
       decoding="async"
     />
   )
