@@ -42,6 +42,20 @@ try:
     png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII='
     image=request('/api/admin/upload','POST',{'data':'data:image/png;base64,'+png},201)
     assert request(image['url'])==base64.b64decode(png)
+    # Test public contact form submission
+    request('/api/contact','POST',{'name':'A','phone':'123'},400,False)
+    lead_res = request('/api/contact','POST',{'name':'Ерлан','phone':'+7 701 555 33 22','details':'Ремонт кухни 18м2'},200,False)
+    assert lead_res['success'] is True and 'leadId' in lead_res
+    # Test review submission
+    rev_res = request('/api/review','POST',{'name':'Алия','object':'ЖК Алматы','review':'Отличная работа мастеров, всё сдали вовремя!'},200,False)
+    assert rev_res['success'] is True
+    # Test admin leads retrieval and deletion
+    leads_res = request('/api/admin/leads','GET')
+    assert len(leads_res['leads']) >= 1
+    assert leads_res['leads'][0]['name'] == 'Ерлан'
+    del_res = request('/api/admin/leads','DELETE',{'id':lead_res['leadId']})
+    assert len(del_res['leads']) == 0
+
     request('/_private/config.php',expected=403)
     request('/_private/content.php',expected=403)
     request('/admin')

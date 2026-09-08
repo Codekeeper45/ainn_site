@@ -145,11 +145,43 @@ function InlineEditor({ onLogout, saveEnabled }) {
       : 'Можно редактировать',
   )
   const [saving, setSaving] = useState(false)
+  const [showLeads, setShowLeads] = useState(false)
+  const [leads, setLeads] = useState([])
+  const [leadsLoading, setLeadsLoading] = useState(false)
   const fileInputRef = useRef(null)
   const contentRef = useRef(content)
   const modeRef = useRef(editor.mode)
   const selectedRef = useRef(selected)
   const refreshRef = useRef(() => {})
+
+  const loadLeads = async () => {
+    setLeadsLoading(true)
+    try {
+      const res = await api('/api/admin/leads')
+      setLeads(res.leads || [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLeadsLoading(false)
+    }
+  }
+
+  const deleteLead = async (id) => {
+    if (!window.confirm('Удалить эту заявку?')) return
+    try {
+      const res = await api('/api/admin/leads', {
+        method: 'DELETE',
+        body: JSON.stringify({ id }),
+      })
+      setLeads(res.leads || [])
+    } catch (e) {
+      alert(e.message)
+    }
+  }
+
+  useEffect(() => {
+    api('/api/admin/leads').then((res) => setLeads(res.leads || [])).catch(() => {})
+  }, [])
 
   useEffect(() => {
     contentRef.current = content
@@ -443,12 +475,62 @@ function InlineEditor({ onLogout, saveEnabled }) {
         {saveEnabled ? status : `Сохранение отключено · ${status}`}
       </p>
       <div className="admin-primary-actions">
+        <button type="button" onClick={() => { setShowLeads(true); loadLeads(); }}>
+          Заявки {leads.length > 0 ? `(${leads.length})` : ''}
+        </button>
         <button data-admin-save className="admin-save" type="button" onClick={save} disabled={saving || !saveEnabled}>
           {!saveEnabled ? 'Сохранение отключено' : saving ? 'Сохранение…' : dirty ? 'Сохранить всё •' : 'Сохранить всё'}
         </button>
         <a href="/" target="_blank" rel="noreferrer">Открыть сайт</a>
         <button type="button" onClick={onLogout}>Выйти</button>
       </div>
+
+      {showLeads ? (
+        <div className="admin-modal-overlay" onClick={() => setShowLeads(false)}>
+          <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="admin-modal-head">
+              <h2>Заявки с сайта ({leads.length})</h2>
+              <button type="button" onClick={() => setShowLeads(false)} aria-label="Закрыть">✕</button>
+            </div>
+            <div className="admin-modal-body">
+              {leadsLoading ? (
+                <p className="admin-loading-text">Загружаем список заявок…</p>
+              ) : leads.length === 0 ? (
+                <div className="admin-empty-leads">
+                  <p>Новых заявок пока нет.</p>
+                  <small>Когда посетитель сайта заполнит форму контактов или отправит заявку, она мгновенно появится здесь, а также поступит на почту <b>info@remont360.kz</b>.</small>
+                </div>
+              ) : (
+                <div className="admin-leads-list">
+                  {leads.map((lead) => (
+                    <div key={lead.id} className="admin-lead-item">
+                      <div className="admin-lead-info">
+                        <strong>{lead.name}</strong>
+                        <div className="admin-lead-contacts">
+                          <a href={`tel:${lead.phone}`}>{lead.phone}</a>
+                          <a
+                            href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="admin-lead-wa"
+                          >
+                            WhatsApp ↗
+                          </a>
+                        </div>
+                        {lead.details ? <p className="admin-lead-details">{lead.details}</p> : null}
+                        <small>{new Date(lead.createdAt).toLocaleString('ru-RU')}</small>
+                      </div>
+                      <button type="button" className="danger" onClick={() => deleteLead(lead.id)}>
+                        Удалить
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </aside>
   )
 }

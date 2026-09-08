@@ -288,6 +288,93 @@ const server = http.createServer(async (request, response) => {
       return json(response, 201, { url: `/uploads/${filename}` })
     }
 
+    if (pathname === '/api/contact' && request.method === 'POST') {
+      const body = await readJson(request, 65536)
+      const name = String(body.name || '').trim().slice(0, 80)
+      const phone = String(body.phone || '').trim().slice(0, 50)
+      const details = String(body.details || '').trim().slice(0, 2000)
+
+      if (name.length < 2) return json(response, 400, { error: 'Укажите ваше имя (минимум 2 символа).' })
+      const digits = phone.replace(/\D/g, '')
+      if (digits.length < 10 || digits.length > 15) return json(response, 400, { error: 'Укажите корректный номер телефона (10–15 цифр).' })
+
+      const lead = {
+        id: `lead-${randomUUID().slice(0, 8)}`,
+        createdAt: new Date().toISOString(),
+        name,
+        phone,
+        details,
+      }
+      const leadsFile = join(dataDir, 'leads.json')
+      let leads = []
+      try {
+        leads = JSON.parse(await readFile(leadsFile, 'utf8'))
+      } catch {}
+      if (!Array.isArray(leads)) leads = []
+      leads.unshift(lead)
+      await writeFile(leadsFile, JSON.stringify(leads.slice(0, 300), null, 2), { mode: 0o600 })
+      return json(response, 200, {
+        success: true,
+        message: 'Заявка успешно принята! Мы перезвоним вам в ближайшее время.',
+        leadId: lead.id,
+      })
+    }
+
+    if (pathname === '/api/review' && request.method === 'POST') {
+      const body = await readJson(request, 65536)
+      const name = String(body.name || '').trim().slice(0, 80)
+      const object = String(body.object || '').trim().slice(0, 80)
+      const review = String(body.review || '').trim().slice(0, 2000)
+      if (name.length < 2) return json(response, 400, { error: 'Укажите ваше имя.' })
+      if (review.length < 20) return json(response, 400, { error: 'Опишите впечатление подробнее.' })
+
+      const item = {
+        id: `review-${randomUUID().slice(0, 8)}`,
+        createdAt: new Date().toISOString(),
+        name,
+        object,
+        review,
+      }
+      const reviewsFile = join(dataDir, 'reviews.json')
+      let reviews = []
+      try {
+        reviews = JSON.parse(await readFile(reviewsFile, 'utf8'))
+      } catch {}
+      if (!Array.isArray(reviews)) reviews = []
+      reviews.unshift(item)
+      await writeFile(reviewsFile, JSON.stringify(reviews.slice(0, 200), null, 2), { mode: 0o600 })
+      return json(response, 200, {
+        success: true,
+        message: 'Спасибо за отзыв! Он появится на сайте после модерации.',
+      })
+    }
+
+    if (pathname === '/api/admin/leads' && request.method === 'GET') {
+      if (!requireAdmin(request, response)) return
+      const leadsFile = join(dataDir, 'leads.json')
+      let leads = []
+      try {
+        leads = JSON.parse(await readFile(leadsFile, 'utf8'))
+      } catch {}
+      return json(response, 200, { leads: Array.isArray(leads) ? leads : [] })
+    }
+
+    if (pathname === '/api/admin/leads' && request.method === 'DELETE') {
+      if (!requireAdmin(request, response)) return
+      const body = await readJson(request)
+      const id = String(body.id || '')
+      const leadsFile = join(dataDir, 'leads.json')
+      let leads = []
+      try {
+        leads = JSON.parse(await readFile(leadsFile, 'utf8'))
+      } catch {}
+      if (Array.isArray(leads)) {
+        leads = leads.filter((l) => l.id !== id)
+        await writeFile(leadsFile, JSON.stringify(leads, null, 2), { mode: 0o600 })
+      }
+      return json(response, 200, { leads })
+    }
+
     if (pathname.startsWith('/api/')) return json(response, 404, { error: 'API route not found.' })
 
     if (request.method !== 'GET' && request.method !== 'HEAD') {

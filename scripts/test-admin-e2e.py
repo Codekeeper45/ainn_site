@@ -208,7 +208,59 @@ async def run_tests():
             brand_cls = await page.locator('.site-header a[href="#top"]').get_attribute('class')
             assert 'brand-link' in brand_cls, f'Expected brand-link class, got {brand_cls}'
             print('✓ Header brand link class verified!')
-            
+
+            # 7. Test Brief Calculator
+            brief_form = page.locator('#calculator form')
+            await brief_form.scroll_into_view_if_needed()
+            await brief_form.locator('button[type="submit"]').click()
+            await page.wait_for_timeout(300)
+            wa_brief_btn = page.locator('.brief-result-box .button-lead-wa')
+            assert await wa_brief_btn.is_visible(), 'Brief WhatsApp button should be visible after calculation!'
+            wa_href = await wa_brief_btn.get_attribute('href')
+            assert 'wa.me/77066606362' in wa_href, f'Expected wa.me link, got {wa_href}'
+            print('✓ Brief calculator WhatsApp link verified!')
+
+            # 8. Test Contact Form Submission in browser
+            contacts_form = page.locator('#contacts form')
+            await contacts_form.scroll_into_view_if_needed()
+            await contacts_form.locator('input[name="name"]').fill('Тестовый Заказчик')
+            await contacts_form.locator('input[name="phone"]').fill('+7 700 111 22 33')
+            await contacts_form.locator('button[type="submit"]').click()
+            await page.wait_for_timeout(1000)
+
+            success_box = page.locator('.form-status-box.form-status-success')
+            assert await success_box.is_visible(), 'Success feedback box should be visible after submitting contact form!'
+            wa_lead_btn = success_box.locator('.button-lead-wa')
+            assert await wa_lead_btn.is_visible(), 'WhatsApp lead button should be visible in success box!'
+            print('✓ Contact form submission and success state verified!')
+
+            # 9. Test Admin Leads Modal
+            leads_btn = page.locator('.admin-primary-actions button:has-text("Заявки")')
+            await leads_btn.click()
+            await page.wait_for_timeout(500)
+            modal = page.locator('.admin-modal-overlay')
+            assert await modal.is_visible(), 'Admin leads modal should open on click!'
+            modal_text = await modal.inner_text()
+            assert 'Тестовый Заказчик' in modal_text, f'Submitted lead should appear in admin modal! Got: {modal_text}'
+            assert '+7 700 111 22 33' in modal_text, f'Phone number should appear in admin modal! Got: {modal_text}'
+            print('✓ Admin leads modal displays real submitted leads with phone and name!')
+
+            # Test lead deletion
+            del_btn = modal.locator('.admin-lead-item button.danger').first
+            # Handle confirm dialog
+            page.on('dialog', lambda dialog: asyncio.create_task(dialog.accept()))
+            await del_btn.click()
+            await page.wait_for_timeout(500)
+            modal_text_after = await modal.inner_text()
+            assert 'Новых заявок пока нет' in modal_text_after, f'Lead should be deleted! Got: {modal_text_after}'
+            print('✓ Admin lead deletion verified!')
+
+            # Close modal
+            await modal.locator('.admin-modal-head button').click()
+            await page.wait_for_timeout(300)
+            assert not await modal.is_visible(), 'Modal should be closed!'
+            print('✓ Admin modal close verified!')
+
             print('\n========================================')
             print('ALL E2E ADMIN PANEL AUDIT CHECKS PASSED!')
             print('========================================')

@@ -588,6 +588,7 @@ function ReviewForm() {
   const [values, setValues] = useState({ name: '', object: '', review: '' })
   const [errors, setErrors] = useState({})
   const [status, setStatus] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const update = (field) => (event) => {
     setValues((current) => ({ ...current, [field]: event.target.value }))
@@ -595,7 +596,7 @@ function ReviewForm() {
     setStatus(null)
   }
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault()
     const name = normalizeText(values.name)
     const review = normalizeText(values.review)
@@ -611,12 +612,29 @@ function ReviewForm() {
       return
     }
 
-    const payload = { name, object: normalizeText(values.object), review }
-    void payload
-    setStatus({
-      type: 'ready',
-      text: 'Текст проверен и сохранён только в этой форме. Отправка появится после подключения канала модерации.',
-    })
+    setSubmitting(true)
+    setStatus(null)
+    try {
+      const res = await fetch('/api/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, object: normalizeText(values.object), review }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Ошибка отправки отзыва.')
+      setValues({ name: '', object: '', review: '' })
+      setStatus({
+        type: 'success',
+        text: 'Спасибо за ваш отзыв! Он отправлен на модерацию и появится на сайте после проверки.',
+      })
+    } catch (err) {
+      setStatus({
+        type: 'error',
+        text: err.message || 'Ошибка связи с сервером. Пожалуйста, повторите позже.',
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -650,7 +668,7 @@ function ReviewForm() {
         />
       </div>
       <div className="field">
-        <label htmlFor="review-text">Ваш отзыв</label>
+        <label htmlFor="review-text">Отзыв</label>
         <textarea
           id="review-text"
           name="review"
@@ -665,8 +683,8 @@ function ReviewForm() {
         />
         {errors.review ? <p className="field-error" id="review-text-error">{errors.review}</p> : null}
       </div>
-      <button className="button button-primary" type="submit">
-        <span>Проверить отзыв</span>
+      <button className="button button-primary" type="submit" disabled={submitting}>
+        <span>{submitting ? 'Отправляем…' : 'Проверить отзыв'}</span>
         <ArrowRight size={18} />
       </button>
       {status ? (
@@ -687,6 +705,8 @@ function ContactForm() {
   const [values, setValues] = useState({ name: '', phone: '' })
   const [errors, setErrors] = useState({})
   const [status, setStatus] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [sentLead, setSentLead] = useState(null)
 
   const update = (field) => (event) => {
     setValues((current) => ({ ...current, [field]: event.target.value }))
@@ -694,7 +714,7 @@ function ContactForm() {
     setStatus(null)
   }
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault()
     const name = normalizeText(values.name)
     const phone = normalizeText(values.phone)
@@ -713,12 +733,30 @@ function ContactForm() {
       return
     }
 
-    const payload = { name, phone }
-    void payload
-    setStatus({
-      type: 'ready',
-      text: 'Контакты проверены, но не отправлены: рабочий канал компании ещё не подключён.',
-    })
+    setSubmitting(true)
+    setStatus(null)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Ошибка отправки заявки.')
+      setSentLead({ name, phone })
+      setValues({ name: '', phone: '' })
+      setStatus({
+        type: 'success',
+        text: 'Заявка успешно принята! Мы перезвоним вам в ближайшее время.',
+      })
+    } catch (err) {
+      setStatus({
+        type: 'error',
+        text: err.message || 'Ошибка отправки. Пожалуйста, напишите нам в WhatsApp или позвоните.',
+      })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -760,19 +798,34 @@ function ContactForm() {
         <p className="field-help" id="contact-phone-help">Допустимы цифры, пробелы, скобки, «+» и «-».</p>
         {errors.phone ? <p className="field-error" id="contact-phone-error">{errors.phone}</p> : null}
       </div>
-      <button className="button button-primary" type="submit">
-        <span>Отправить заявку</span>
+      <button className="button button-primary" type="submit" disabled={submitting}>
+        <span>{submitting ? 'Отправляем…' : 'Отправить заявку'}</span>
         <ArrowRight size={18} />
       </button>
       {status ? (
-        <p
-          className={`form-status form-status-${status.type}`}
-          role={status.type === 'error' ? 'alert' : 'status'}
-          aria-live={status.type === 'error' ? 'assertive' : 'polite'}
-          aria-atomic="true"
-        >
-          {status.text}
-        </p>
+        <div className={`form-status-box form-status-${status.type}`}>
+          <p
+            className={`form-status form-status-${status.type}`}
+            role={status.type === 'error' ? 'alert' : 'status'}
+            aria-live={status.type === 'error' ? 'assertive' : 'polite'}
+            aria-atomic="true"
+          >
+            {status.text}
+          </p>
+          {status.type === 'success' && sentLead ? (
+            <a
+              className="button button-lead-wa"
+              href={`https://wa.me/77066606362?text=${encodeURIComponent(
+                `Здравствуйте! Я оставил заявку на сайте remont360.kz.\nИмя: ${sentLead.name}\nТелефон: ${sentLead.phone}\nХочу обсудить проект ремонта.`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle size={18} />
+              <span>Написать в WhatsApp</span>
+            </a>
+          ) : null}
+        </div>
       ) : null}
     </form>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowRight } from './Icons.jsx'
+import { ArrowRight, MessageCircle } from './Icons.jsx'
 
 /**
  * Interactive brief — mechanics preserved from the approved version:
@@ -47,11 +47,7 @@ export default function Brief() {
           data-reveal="card"
           onSubmit={(event) => {
             event.preventDefault()
-            const payload = { area, repairType: type, condition, material }
-            void payload
-            setStatus(
-              'Бриф собран и показан в сводке. Он не отправлен: канал связи компании ещё не подключён.',
-            )
+            setStatus(true)
           }}
         >
           <fieldset className="area-field">
@@ -94,9 +90,28 @@ export default function Brief() {
           </button>
 
           {status ? (
-            <p className="form-status form-status-ready" role="status" aria-live="polite" aria-atomic="true">
-              {status}
-            </p>
+            <div className="brief-result-box">
+              <p className="brief-result-text">
+                ✓ Параметры сформированы: <b>{area} м²</b>, <b>{type.toLowerCase()}</b> ремонт, объект <b>{condition.toLowerCase()}</b>, материалы <b>{material.toLowerCase()}</b>.
+              </p>
+              <div className="brief-result-actions">
+                <a
+                  className="button button-lead-wa"
+                  href={`https://wa.me/77066606362?text=${encodeURIComponent(
+                    `Здравствуйте! Хочу рассчитать стоимость ремонта на remont360.kz:\n• Площадь: ${area} м²\n• Тип ремонта: ${type}\n• Состояние: ${condition}\n• Уровень материалов: ${material}\nПодскажите примерную стоимость и сроки?`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle size={18} />
+                  <span>Отправить расчёт в WhatsApp</span>
+                </a>
+                <a className="button button-secondary" href="#contacts">
+                  <span>Заказать выезд на замер</span>
+                  <ArrowRight size={18} />
+                </a>
+              </div>
+            </div>
           ) : null}
         </form>
       </div>

@@ -96,6 +96,100 @@ try {
     $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     $method = $_SERVER['REQUEST_METHOD'];
     if ($path === '/api/content' && $method === 'GET') reply(200, normalize(loadPrivate($private.'/content.php', [])));
+
+    // --- Public endpoint: Submit contact lead ---
+    if ($path === '/api/contact' && $method === 'POST') {
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        if ($origin !== '') {
+            $originHost = parse_url($origin, PHP_URL_HOST);
+            $serverHost = explode(':', $_SERVER['HTTP_HOST'] ?? '')[0];
+            if ($originHost !== $serverHost && !in_array($originHost, ['remont360.kz', 'www.remont360.kz', '127.0.0.1', 'localhost'], true)) {
+                reply(403, ['error' => 'Запрос отклонён.']);
+            }
+        }
+        $lock = fopen($private.'/rate-lock.php', 'c+');
+        if ($lock && flock($lock, LOCK_EX)) {
+            $rates = loadPrivate($private.'/contact-rates.php', []);
+            $rates = array_filter($rates, fn($r) => ($r['until'] ?? 0) > time());
+            $ip = hash('sha256', $_SERVER['REMOTE_ADDR'] ?? 'unknown');
+            $r = $rates[$ip] ?? ['count' => 0, 'until' => time() + 600];
+            if ($r['count'] >= 20) {
+                flock($lock, LOCK_UN); fclose($lock);
+                reply(429, ['error' => 'Слишком много запросов. Пожалуйста, подождите или напишите нам в WhatsApp.']);
+            }
+            $r['count']++;
+            $rates[$ip] = $r;
+            storePrivate($private.'/contact-rates.php', $rates);
+            flock($lock, LOCK_UN); fclose($lock);
+        }
+
+        $input = body(65536);
+        $name = trim(text($input['name'] ?? '', 80));
+        $phone = trim(text($input['phone'] ?? '', 50));
+        $details = trim(text($input['details'] ?? '', 2000));
+
+        if (mb_strlen($name) < 2) reply(400, ['error' => 'Укажите ваше имя (минимум 2 символа).']);
+        $digits = preg_replace('/\D/', '', $phone);
+        if (strlen($digits) < 10 || strlen($digits) > 15) reply(400, ['error' => 'Укажите корректный номер телефона (10–15 цифр).']);
+
+        $lead = [
+            'id' => 'lead-' . bin2hex(random_bytes(6)),
+            'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z'),
+            'name' => $name,
+            'phone' => $phone,
+            'details' => $details,
+            'ip' => hash('sha256', $_SERVER['REMOTE_ADDR'] ?? 'unknown'),
+        ];
+
+        $leads = loadPrivate($private . '/leads.php', []);
+        if (!is_array($leads)) $leads = [];
+        array_unshift($leads, $lead);
+        if (count($leads) > 300) $leads = array_slice($leads, 0, 300);
+        storePrivate($private . '/leads.php', $leads);
+
+        // Send email notification to info@remont360.kz
+        $subEncoded = '=?UTF-8?B?' . base64_encode("Новая заявка: {$name} ({$phone})") . '?=';
+        $bodyMail = "Новая заявка с сайта https://remont360.kz\n\n"
+                  . "Имя: {$name}\n"
+                  . "Телефон: {$phone}\n";
+        if ($details !== '') $bodyMail .= "Детали / Бриф: {$details}\n";
+        $bodyMail .= "Дата: " . date('d.m.Y H:i:s') . "\n";
+        $headers = "From: info@remont360.kz\r\n"
+                 . "Reply-To: info@remont360.kz\r\n"
+                 . "Content-Type: text/plain; charset=UTF-8\r\n"
+                 . "X-Mailer: PHP/" . phpversion();
+        @mail('info@remont360.kz', $subEncoded, $bodyMail, $headers);
+
+        reply(200, [
+            'success' => true,
+            'message' => 'Заявка успешно принята! Мы перезвоним вам в ближайшее время.',
+            'leadId' => $lead['id'],
+        ]);
+    }
+
+    // --- Public endpoint: Submit client review ---
+    if ($path === '/api/review' && $method === 'POST') {
+        $input = body(65536);
+        $name = trim(text($input['name'] ?? '', 80));
+        $object = trim(text($input['object'] ?? '', 80));
+        $review = trim(text($input['review'] ?? '', 2000));
+        if (mb_strlen($name) < 2) reply(400, ['error' => 'Укажите ваше имя.']);
+        if (mb_strlen($review) < 20) reply(400, ['error' => 'Опишите впечатление подробнее (минимум 20 символов).']);
+        $item = [
+            'id' => 'review-' . bin2hex(random_bytes(6)),
+            'createdAt' => gmdate('Y-m-d\TH:i:s.000\Z'),
+            'name' => $name,
+            'object' => $object,
+            'review' => $review,
+            'ip' => hash('sha256', $_SERVER['REMOTE_ADDR'] ?? 'unknown'),
+        ];
+        $reviews = loadPrivate($private . '/reviews.php', []);
+        if (!is_array($reviews)) $reviews = [];
+        array_unshift($reviews, $item);
+        if (count($reviews) > 200) $reviews = array_slice($reviews, 0, 200);
+        storePrivate($private . '/reviews.php', $reviews);
+        reply(200, ['success' => true, 'message' => 'Спасибо за отзыв! Он появится на сайте после модерации.']);
+    }
     if ($method !== 'GET') {
         if (($_SERVER['HTTP_X_ADMIN_REQUEST'] ?? '') !== '1') reply(403, ['error'=>'Запрос отклонён.']);
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -151,6 +245,20 @@ try {
         $name = bin2hex(random_bytes(16)).$ext;
         if (file_put_contents(__DIR__.'/uploads/'.$name,$bytes,LOCK_EX) !== strlen($bytes)) throw new RuntimeException('Upload write failed');
         reply(201,['url'=>'/uploads/'.$name]);
+    }
+    if ($path === '/api/admin/leads' && $method === 'GET') {
+        $leads = loadPrivate($private . '/leads.php', []);
+        reply(200, ['leads' => is_array($leads) ? $leads : []]);
+    }
+    if ($path === '/api/admin/leads' && $method === 'DELETE') {
+        $input = body();
+        $id = text($input['id'] ?? '', 80);
+        $leads = loadPrivate($private . '/leads.php', []);
+        if (is_array($leads)) {
+            $leads = array_values(array_filter($leads, fn($l) => ($l['id'] ?? '') !== $id));
+            storePrivate($private . '/leads.php', $leads);
+        }
+        reply(200, ['leads' => $leads]);
     }
     reply(404,['error'=>'API route not found.']);
 } catch (Throwable $e) {
