@@ -79,10 +79,10 @@ function hasEditableText(element) {
   if (element.closest('[data-admin-ui]')) return false
   if (element.closest('.admin-block-controls')) return false
   if (element.closest('.brief-summary, .form-status, .field-error, output')) return false
+  if (element.matches('[data-split]')) return true
   // Leaf text elements only — containers with child elements (e.g. SVG icons or nested spans)
   // should not be edited directly so SVG icons are never wiped out.
   if (element.children.length > 0) return false
-  if (element.matches('[data-split]')) return true
   if (element.dataset.adminOriginalText !== undefined) return true
   return Boolean(element.textContent?.trim())
 }
@@ -189,8 +189,35 @@ export function applyContent(content, options = {}) {
     const primaryKey = textKey(element)
     const legacyKey = `text:${elementPath(element)}`
     const value = safeContent.texts?.[primaryKey] ?? safeContent.texts?.[legacyKey]
-    if (typeof value === 'string' && element.textContent !== value) {
-      element.textContent = value
+    if (typeof value === 'string') {
+      if (element.matches('[data-split]')) {
+        const currentText = element.getAttribute('aria-label') || element.textContent || ''
+        if (currentText.trim() !== value.trim()) {
+          element.setAttribute('aria-label', value.trim())
+          if (element.children.length > 0 && element.querySelector('.split-word')) {
+            element.textContent = ''
+            value.split(/(\s+)/).forEach((part) => {
+              if (!part.trim()) {
+                element.appendChild(document.createTextNode(part))
+                return
+              }
+              const mask = document.createElement('span')
+              const word = document.createElement('span')
+              mask.className = 'split-word-mask'
+              mask.setAttribute('aria-hidden', 'true')
+              word.className = 'split-word'
+              word.textContent = part
+              mask.appendChild(word)
+              element.appendChild(mask)
+            })
+            element.dataset.splitReady = 'true'
+          } else {
+            element.textContent = value
+          }
+        }
+      } else if (element.textContent !== value) {
+        element.textContent = value
+      }
     }
   })
   collectImageTargets().forEach((element) => {
