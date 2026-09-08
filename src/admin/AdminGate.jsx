@@ -215,14 +215,6 @@ function InlineEditor({ onLogout, saveEnabled }) {
           setSelected({ type: 'text', key: element.dataset.adminTextKey, element })
           return
         }
-        // If clicked on any block / collection item (tariff, service, case, process, walk step)
-        const collectionEl = event.target.closest?.('[data-collection-item]')
-        if (collectionEl?.dataset?.collectionId && collectionEl?.dataset?.itemId) {
-          event.preventDefault()
-          event.stopPropagation()
-          editor.openEditor(collectionEl.dataset.collectionId, collectionEl.dataset.itemId)
-          return
-        }
       }
       if (modeRef.current === 'image') {
         // If clicked on a case card / case image

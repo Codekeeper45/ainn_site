@@ -62,12 +62,16 @@ export function imageKey(element) {
 
 function hasEditableText(element) {
   if (element.closest('[data-admin-ui]')) return false
-  // Collection content is edited through the block panel; keeping positional
-  // text keys away from it prevents overrides from drifting when items move.
-  if (element.closest('[data-collection-item]')) return false
   if (element.matches('[data-split]')) return Boolean(element.textContent?.trim())
   if (element.closest('.brief-summary, .form-status, .field-error, output')) return false
-  if (element.children.length) return false
+  // Exclude buttons in collections that are controls
+  if (element.closest('.admin-block-controls')) return false
+  // Allow text editing on leaf text elements
+  if (element.children.length > 0) {
+    // If element has only SVG icon or simple formatting, check if it has text nodes
+    const textNodes = Array.from(element.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE && n.textContent.trim())
+    if (textNodes.length === 0) return false
+  }
   return Boolean(element.textContent?.trim())
 }
 
