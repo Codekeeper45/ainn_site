@@ -1060,6 +1060,16 @@ textarea {
   font-weight: 600;
 }
 
+.admin-mode .choice.active span {
+  color: #000 !important;
+  caret-color: #000 !important;
+  font-weight: 700;
+}
+
+.admin-mode .choice span {
+  cursor: text !important;
+}
+
 .form-status {
   margin-top: 4px;
   font-size: 0.92rem;

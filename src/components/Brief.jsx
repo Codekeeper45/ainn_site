@@ -10,7 +10,7 @@ import { ArrowRight, MessageCircle } from './Icons.jsx'
 
 const REPAIR_TYPES = ['Косметический', 'Комплексный', 'Под ключ']
 const CONDITIONS = ['Черновая', 'Предчистовая', 'Чистовая']
-const MATERIALS = ['Стандарт', 'Стандарт+', 'Премиум']
+const OBJECT_TYPES = ['Квартира', 'Дом', 'Коммерция']
 
 const AREA_MIN = 25
 const AREA_MAX = 220
@@ -19,8 +19,8 @@ export default function Brief() {
   const [area, setArea] = useState(86)
   const [type, setType] = useState('Комплексный')
   const [condition, setCondition] = useState('Предчистовая')
-  const [material, setMaterial] = useState('Стандарт+')
-  const [status, setStatus] = useState('')
+  const [objectType, setObjectType] = useState('Квартира')
+  const [status, setStatus] = useState(false)
 
   const progress = ((area - AREA_MIN) / (AREA_MAX - AREA_MIN)) * 100
 
@@ -38,7 +38,7 @@ export default function Brief() {
             <span>{area} м²</span>
             <span>{type}</span>
             <span>{condition}</span>
-            <span>{material}</span>
+            <span>{objectType}</span>
           </div>
         </div>
 
@@ -78,27 +78,27 @@ export default function Brief() {
             onChange={setCondition}
           />
           <ChoiceGroup
-            label="Уровень материалов"
-            options={MATERIALS}
-            value={material}
-            onChange={setMaterial}
+            label="Тип объекта"
+            options={OBJECT_TYPES}
+            value={objectType}
+            onChange={setObjectType}
           />
 
           <button className="button button-primary form-submit" type="submit">
-            Собрать расчёт
+            <span>Собрать расчёт</span>
             <ArrowRight size={19} />
           </button>
 
           {status ? (
             <div className="brief-result-box">
               <p className="brief-result-text">
-                ✓ Параметры сформированы: <b>{area} м²</b>, <b>{type.toLowerCase()}</b> ремонт, объект <b>{condition.toLowerCase()}</b>, материалы <b>{material.toLowerCase()}</b>.
+                ✓ Параметры сформированы: <b>{area} м²</b>, <b>{type.toLowerCase()}</b> ремонт, объект <b>{condition.toLowerCase()}</b>, тип: <b>{objectType.toLowerCase()}</b>.
               </p>
               <div className="brief-result-actions">
                 <a
                   className="button button-lead-wa"
                   href={`https://wa.me/77066606362?text=${encodeURIComponent(
-                    `Здравствуйте! Хочу рассчитать стоимость ремонта на remont360.kz:\n• Площадь: ${area} м²\n• Тип ремонта: ${type}\n• Состояние: ${condition}\n• Уровень материалов: ${material}\nПодскажите примерную стоимость и сроки?`
+                    `Здравствуйте! Хочу рассчитать стоимость ремонта на remont360.kz:\n• Площадь: ${area} м²\n• Тип ремонта: ${type}\n• Состояние: ${condition}\n• Тип объекта: ${objectType}\nПодскажите примерную стоимость и сроки?`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -127,7 +127,19 @@ function ChoiceGroup({ label, options, value, onChange }) {
       <legend>{label}</legend>
       <div className="choice-row">
         {options.map((option) => (
-          <label className={`choice${option === value ? ' active' : ''}`} key={option}>
+          <label
+            className={`choice${option === value ? ' active' : ''}`}
+            key={option}
+            onClick={(e) => {
+              if (document.documentElement.classList.contains('admin-mode')) {
+                e.preventDefault()
+                const span = e.currentTarget.querySelector('span')
+                if (span) span.focus()
+              } else {
+                onChange(option)
+              }
+            }}
+          >
             <input
               className="visually-hidden"
               type="radio"
