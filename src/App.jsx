@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSiteMotion } from './useSiteMotion.js'
-import { ArrowRight, Check, Menu, X } from './components/Icons.jsx'
+import { ArrowRight, Check, Menu, X, Mail, Phone, MessageCircle, MapPin } from './components/Icons.jsx'
 import Brand from './components/Brand.jsx'
 import Brief from './components/Brief.jsx'
 import { useCollection } from './content/ContentContext.jsx'
@@ -498,8 +498,26 @@ export default function App({ adminMode = false }) {
               <h2 data-split>Алматы. Начнём с короткого разговора.</h2>
               <p>
                 Оставьте имя и телефон — вернёмся с вопросами по объёму работ и договоримся о
-                замере.
+                замере, либо свяжитесь с нами напрямую:
               </p>
+              <div className="contacts-direct">
+                <a className="contact-link" href="https://wa.me/77059763369" target="_blank" rel="noopener noreferrer">
+                  <MessageCircle size={18} />
+                  <span>Написать в WhatsApp</span>
+                </a>
+                <a className="contact-link" href="tel:+77059763369">
+                  <Phone size={18} />
+                  <span>+7 (705) 976-33-69</span>
+                </a>
+                <a className="contact-link" href="mailto:info@remont360.kz">
+                  <Mail size={18} />
+                  <span>info@remont360.kz</span>
+                </a>
+                <div className="contact-link contact-address">
+                  <MapPin size={18} />
+                  <span>г. Алматы, Казахстан</span>
+                </div>
+              </div>
             </div>
             <ContactForm />
           </div>
@@ -511,8 +529,14 @@ export default function App({ adminMode = false }) {
           <a href="#top" aria-label="Стальком Продукт — наверх">
             <Brand />
           </a>
-          <p>Ремонт квартир в Алматы</p>
-          <p>© {new Date().getFullYear()} Стальком Продукт</p>
+          <div className="footer-contacts">
+            <a href="tel:+77059763369">+7 (705) 976-33-69</a>
+            <span className="footer-divider">·</span>
+            <a href="mailto:info@remont360.kz">info@remont360.kz</a>
+            <span className="footer-divider">·</span>
+            <a href="https://wa.me/77059763369" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+          </div>
+          <p>© {new Date().getFullYear()} Стальком Продукт · Ремонт квартир в Алматы</p>
         </div>
       </footer>
     </>
@@ -735,7 +759,7 @@ function ContactForm() {
         {errors.phone ? <p className="field-error" id="contact-phone-error">{errors.phone}</p> : null}
       </div>
       <button className="button button-primary" type="submit">
-        Проверить контакты
+        Отправить заявку
         <ArrowRight size={18} />
       </button>
       {status ? (

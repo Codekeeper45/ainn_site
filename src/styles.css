@@ -1264,6 +1264,61 @@ textarea {
   color: var(--muted);
 }
 
+.contacts-direct {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  font-size: 1.05rem;
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.contact-link:hover {
+  color: var(--accent);
+}
+
+.contact-link svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.contact-address {
+  color: var(--muted);
+}
+
+.contact-address svg {
+  color: var(--muted);
+}
+
+.footer-contacts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.footer-contacts a {
+  color: var(--muted-strong);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.footer-contacts a:hover {
+  color: var(--text);
+}
+
+.footer-divider {
+  color: var(--line-strong);
+}
+
 .site-footer {
   padding-block: 44px;
   border-top: 1px solid var(--line);
