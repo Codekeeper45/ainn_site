@@ -21,4 +21,5 @@ React 19, Three.js, Vite, GSAP, Lenis. Node server.
 
 1. Правки контента через inline-editor сохраняются в файлы — не ломай `ADMIN_SAVE_ENABLED` механизм.
 2. Three.js сцены: следить за производительностью (VPS 2 vCPU).
-3. Деплой через systemd user units, не через docker.
+3. Локальный preview: systemd user units, не docker. Продакшен `remont360.kz`: PS.kz shared, PHP API + статическая сборка, FTPS; см. `docs/PHP-HOSTING.md`.
+4. PHP сборка: `npm run build && node scripts/build-php.mjs`; тесты: `python3 scripts/test-php.py`. Файлы `_private` и uploads на хостинге сохранять между релизами; секреты не коммитить.

@@ -3,6 +3,9 @@ dist/
 .vite/
 .zcode/
 .site-data/
+.deploy-backup/
+.test-php/
+hosting/_private/*.php
 *.log
 .DS_Store
 
