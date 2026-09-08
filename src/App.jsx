@@ -501,13 +501,13 @@ export default function App({ adminMode = false }) {
                 замере, либо свяжитесь с нами напрямую:
               </p>
               <div className="contacts-direct">
-                <a className="contact-link" href="https://wa.me/77059763369" target="_blank" rel="noopener noreferrer">
+                <a className="contact-link" href="https://wa.me/77066606362" target="_blank" rel="noopener noreferrer">
                   <MessageCircle size={18} />
                   <span>Написать в WhatsApp</span>
                 </a>
-                <a className="contact-link" href="tel:+77059763369">
+                <a className="contact-link" href="tel:+77066606362">
                   <Phone size={18} />
-                  <span>+7 (705) 976-33-69</span>
+                  <span>+7 (706) 660-63-62</span>
                 </a>
                 <a className="contact-link" href="mailto:info@remont360.kz">
                   <Mail size={18} />
@@ -530,11 +530,11 @@ export default function App({ adminMode = false }) {
             <Brand />
           </a>
           <div className="footer-contacts">
-            <a href="tel:+77059763369">+7 (705) 976-33-69</a>
+            <a href="tel:+77066606362">+7 (706) 660-63-62</a>
             <span className="footer-divider">·</span>
             <a href="mailto:info@remont360.kz">info@remont360.kz</a>
             <span className="footer-divider">·</span>
-            <a href="https://wa.me/77059763369" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+            <a href="https://wa.me/77066606362" target="_blank" rel="noopener noreferrer">WhatsApp</a>
           </div>
           <p>© {new Date().getFullYear()} Стальком Продукт · Ремонт квартир в Алматы</p>
         </div>
