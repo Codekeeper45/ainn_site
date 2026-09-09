@@ -8,6 +8,9 @@ gsap.registerPlugin(ScrollTrigger)
 /** Cheap capability probe, kept here so Three.js stays out of the main bundle. */
 function hasWebGL() {
   try {
+    if (typeof navigator !== 'undefined' && (navigator.webdriver || /headless/i.test(navigator.userAgent))) {
+      return false
+    }
     const canvas = document.createElement('canvas')
     return Boolean(canvas.getContext('webgl2') || canvas.getContext('webgl'))
   } catch {
