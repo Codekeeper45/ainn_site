@@ -106,6 +106,9 @@ export function useSiteMotion() {
 
     const refresh = () => {
       if (!disposed) ScrollTrigger.refresh()
+      // Layout (pin spacers, image heights) just settled: a deep link that
+      // scrolled early may sit ~600px off. Let main.jsx re-aim it.
+      window.dispatchEvent(new CustomEvent('app:scroll-refresh'))
     }
 
     window.addEventListener('load', refresh)
@@ -166,6 +169,7 @@ export function useSiteMotion() {
             localLenis.off?.('scroll', ScrollTrigger.update)
             if (tickerCallback) gsap.ticker.remove(tickerCallback)
             localLenis.destroy?.()
+            if (window.__lenis === localLenis) window.__lenis = null
             localLenis = null
           }
         }
@@ -183,8 +187,13 @@ export function useSiteMotion() {
         localLenis = new Lenis({
           duration: 1.05,
           smoothWheel: true,
-          anchors: { offset: -80 },
+          // Section `scroll-margin-top` already clears the fixed header.
+          // Any extra offset here double-counts it (nav jumps landed ~176px
+          // low), so anchors scroll with zero additional offset.
+          anchors: { offset: 0 },
         })
+        // Deep-link handler in main.jsx routes through the live instance.
+        window.__lenis = localLenis
         localLenis.on('scroll', ScrollTrigger.update)
         tickerCallback = (time) => localLenis?.raf(time * 1000)
         gsap.ticker.add(tickerCallback)

@@ -53,7 +53,9 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-padding-top: calc(var(--header-h) + 28px);
+  /* Anchor offset lives only in section scroll-margin-top below. Lenis
+     subtracts both scroll-margin and scroll-padding, so keeping both here
+     double-counted the header offset and every nav jump landed ~176px low. */
 }
 
 html.lenis,
@@ -359,12 +361,34 @@ textarea {
   transform: translateY(-1px);
 }
 
+/* Touch has no hover: the same feedback must fire on tap. */
+@media (hover: none) {
+  .button:active {
+    background: rgb(255 255 255 / 7%);
+    transform: translateY(-1px);
+  }
+
+  .button-primary:active {
+    background: #ff6420;
+  }
+
+  .nav-cta:active {
+    background: #ff6420 !important;
+  }
+}
+
 .button svg {
   transition: transform var(--dur-mid) var(--ease-out);
 }
 
 .button:hover svg {
   transform: translateX(4px);
+}
+
+@media (hover: none) {
+  .button:active svg {
+    transform: translateX(4px);
+  }
 }
 
 .button-primary {
@@ -1048,9 +1072,19 @@ textarea {
   background: rgb(255 255 255 / 6%);
 }
 
+@media (hover: none) {
+  .choice:active {
+    background: rgb(255 255 255 / 6%);
+  }
+}
+
 .choice:has(input:focus-visible) {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
+}
+
+.choice:has(input:focus:not(:focus-visible)) {
+  outline: none;
 }
 
 .choice.active {
@@ -1122,6 +1156,12 @@ textarea {
 
 .faq-list summary::-webkit-details-marker {
   display: none;
+}
+
+.faq-list summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 
 .faq-list summary::after {
