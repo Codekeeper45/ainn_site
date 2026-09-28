@@ -265,6 +265,8 @@ export default function App() {
           ref={mobileNavRef}
           className="mobile-nav"
           id="mobile-navigation"
+          role="dialog"
+          aria-modal="true"
           aria-label="Мобильная навигация"
           data-lenis-prevent
         >
